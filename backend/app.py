@@ -1,11 +1,12 @@
 from flask import Flask
 from flask_security import Security
+from flask_cors import CORS
 
 from components.extensions import bcrypt, datastore
 from components.models import db
 from components.api import api
 from components.authentication import authentication
-from components.config import DevelopmentConfig
+from config import DevelopmentConfig
 
 def create_app():
     app = Flask(__name__)
@@ -15,6 +16,10 @@ def create_app():
     api.init_app(app)
     app.security = Security(app, datastore)
     app.register_blueprint(authentication)
+    
+    # CORS for separate servers
+    CORS(app)
+    
     return app
 
 app = create_app()

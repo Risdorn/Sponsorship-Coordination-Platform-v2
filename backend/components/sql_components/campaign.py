@@ -46,7 +46,7 @@ def validate_update_campaign(campaign_id, name, description, start_date, end_dat
     # Check if budget is a number
     if budget and not re.search(r'^\d+(\.\d+)?$', budget): return False, "Budget should be a number"
     # Check if budget is greater than remaining
-    if budget and float(budget) > campaign.budget - campaign.remaining: return False, "Budget should account for remaining amount"
+    if budget and float(budget) < campaign.budget - campaign.remaining: return False, "Budget should account for remaining amount"
     # Check if visibility is valid
     if visibility and visibility not in ["Public", "Private"]: return False, "Invalid visibility"
     return True, ""
@@ -66,6 +66,7 @@ def create_campaign(sponsor_id, name, description, start_date, end_date, categor
 def get_campaign(campaign_id):
     # Get campaign
     campaign = Campaign.query.filter_by(id=campaign_id).first()
+    campaign.progress = round((campaign.budget - campaign.remaining) / campaign.budget * 100, 2)
     return campaign
 
 def update_campaign(campaign_id, params):
@@ -86,12 +87,17 @@ def delete_campaign(campaign_id):
     db.session.commit()
     return campaign
 
-def get_sponsor_campaigns(sponsor_id):
+def get_sponsor_campaigns(sponsor_id, page):
     # Get campaigns associated with sponsor
-    campaigns = Campaign.query.filter_by(sponsor_id=sponsor_id).all()
+    campaigns = Campaign.query.filter_by(sponsor_id=sponsor_id).paginate(page=page, per_page=5, error_out=False)
+    campaigns.pages_iter = []
+    for page in campaigns.iter_pages():
+        campaigns.pages_iter.append(page)
+    for campaign in campaigns.items:
+        campaign.progress = round((campaign.budget - campaign.remaining) / campaign.budget * 100, 2)
     return campaigns
 
-def search_campaign(name, budget, category):
+def search_campaign(name, budget, category, page):
     # Search via name
     campaigns = Campaign.query.filter_by(visibility="Public").filter(Campaign.ad_requests.any())
     if category: campaigns = campaigns.filter_by(category=category)
@@ -101,4 +107,20 @@ def search_campaign(name, budget, category):
         campaigns = campaigns.order_by(Campaign.budget.desc())
     elif budget == "Ascending":
         campaigns = campaigns.order_by(Campaign.budget.asc())
-    return campaigns.all()
+    campaigns = campaigns.paginate(page=page, per_page=5, error_out=False)
+    campaigns.pages_iter = []
+    for page in campaigns.iter_pages():
+        campaigns.pages_iter.append(page)
+    for campaign in campaigns.items:
+        campaign.progress = round((campaign.budget - campaign.remaining) / campaign.budget * 100, 2)
+    return campaigns
+
+def get_all_campaigns(page):
+    # Get all campaigns
+    campaigns = Campaign.query.paginate(page=page, per_page=5, error_out=False)
+    campaigns.pages_iter = []
+    for page in campaigns.iter_pages():
+        campaigns.pages_iter.append(page)
+    for campaign in campaigns.items:
+        campaign.progress = round((campaign.budget - campaign.remaining) / campaign.budget * 100, 2)
+    return campaigns

@@ -1,8 +1,19 @@
-import Vue from 'vue'
+// main.js
+import { createApp } from 'vue'
 import App from './App.vue'
+import router from './router'
+import { createMetaManager } from 'vue-meta';
 
-Vue.config.productionTip = false
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
-new Vue({
-  render: h => h(App),
-}).$mount('#app')
+
+const app = createApp(App);
+
+const metaManager = createMetaManager();
+app.use(metaManager);
+
+app.use(router);
+
+app.mount('#app');
+

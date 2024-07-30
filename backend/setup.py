@@ -1,6 +1,6 @@
-from app import app
+from app import app, db
 from components.extensions import datastore, bcrypt
-from components.models import db, Role
+#from components.models import db
 
 with app.app_context():
     db.drop_all()

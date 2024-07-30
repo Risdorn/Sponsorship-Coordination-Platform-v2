@@ -17,25 +17,46 @@ campaign_marshal = {
     "remaining": fields.Float,
     "start_date": fields.String,
     "end_date": fields.String,
-    "created_on": fields.String
+    "created_on": fields.String,
+    "progress": fields.Float
+}
+
+pagination_marshal = {
+    "total": fields.Integer,
+    "per_page": fields.Integer,
+    "page": fields.Integer,
+    "pages_iter": fields.List(fields.Integer),
+    "has_next": fields.Boolean,
+    "has_prev": fields.Boolean,
+    "next_num": fields.Integer,
+    "prev_num": fields.Integer,
+    "items": fields.List(fields.Nested(campaign_marshal)),
+    "ad_requests": fields.List(fields.Nested({
+        "id": fields.Integer,
+        "campaign_id": fields.Integer,
+        "influencer_id": fields.Integer,
+        "status": fields.String,
+        "created_on": fields.String
+    }))
 }
 
 campaign_parser = reqparse.RequestParser()
-campaign_parser.add_argument("sponsor_id", location="form")
-campaign_parser.add_argument("name", location="form")
-campaign_parser.add_argument("description", location="form")
-campaign_parser.add_argument("goals", location="form")
-campaign_parser.add_argument("category", location="form")
-campaign_parser.add_argument("budget", location="form")
-campaign_parser.add_argument("start_date", location="form")
-campaign_parser.add_argument("end_date", location="form")
-campaign_parser.add_argument("visibility", location="form")
+campaign_parser.add_argument("sponsor_id", location="json")
+campaign_parser.add_argument("name", location="json")
+campaign_parser.add_argument("description", location="json")
+campaign_parser.add_argument("goals", location="json")
+campaign_parser.add_argument("category", location="json")
+campaign_parser.add_argument("budget", location="json")
+campaign_parser.add_argument("start_date", location="json")
+campaign_parser.add_argument("end_date", location="json")
+campaign_parser.add_argument("visibility", location="json")
 
 search_parser = reqparse.RequestParser()
-search_parser.add_argument("sponsor_id", help="Get all campaigns associated with Sponsor", location="form")
-search_parser.add_argument("name", help="Search for campaigns with name like", location="form")
-search_parser.add_argument("budget", help="Ascending or Descending", location="form")
-search_parser.add_argument("category", help="Filter By Category", location="form")
+search_parser.add_argument("sponsor_id", help="Get all campaigns associated with Sponsor", location="json")
+search_parser.add_argument("name", help="Search for campaigns with name like", location="json")
+search_parser.add_argument("budget", help="Ascending or Descending", location="json")
+search_parser.add_argument("category", help="Filter By Category", location="json")
+search_parser.add_argument("page", help="Page Number", location="json")
 
 class Campaigns(Resource):
     @auth_required('token')
@@ -72,7 +93,8 @@ class Create_Campaign(Resource):
     def post(self):
         args = campaign_parser.parse_args()
         if not args.get('sponsor_id'): return {"message": "Sponsor ID Missing"}, 400
-        sponsor = get_user(args.get('sponsor_id'))
+        args['sponsor_id'] = int(args.get('sponsor_id'))
+        sponsor = get_user('', id = args.get('sponsor_id'))
         if not sponsor: return {"message": "Sponsor Not Found"}, 400
         if "Sponsor" not in sponsor.roles: return {"message": "User is not a Sponsor"}, 400
         valid, message = validate_campaign(args.get('name'), args.get('description'), args.get('start_date'), args.get('end_date'), args.get('category'), 
@@ -87,17 +109,26 @@ class Create_Campaign(Resource):
     def put(self): return {"message": "PUT not allowed"}, 405
     def delete(self): return {"message": "DELETE not allowed"}, 405
 
-class All_Campaigns(Resource):
+class Search_Campaigns(Resource):
     @auth_required('token')
     def post(self):
         args = search_parser.parse_args()
         if args.get('sponsor_id'): 
-            campaigns = get_sponsor_campaigns(args.get('sponsor_id'))
+            campaigns = get_sponsor_campaigns(args.get('sponsor_id'), int(args.get('page', 1)))
         else:
-            campaigns = search_campaign(args.get('name'), args.get('budget'), args.get('category'))
-        for i in range(len(campaigns)):
-            campaigns[i] = marshal(campaigns[i], campaign_marshal)
-        return campaigns, 200
+            campaigns = search_campaign(args.get('name'), args.get('budget'), args.get('category'), int(args.get('page', 1)))
+        return marshal(campaigns, pagination_marshal), 200
+    
+    def get(self): return {"message": "GET not allowed"}, 405
+    def put(self): return {"message": "PUT not allowed"}, 405
+    def delete(self): return {"message": "DELETE not allowed"}, 405
+
+class All_Campaigns(Resource):
+    @auth_required('token')
+    def post(self):
+        args = search_parser.parse_args()
+        campaigns = get_all_campaigns(int(args.get('page', 1)))
+        return marshal(campaigns, pagination_marshal), 200
     
     def get(self): return {"message": "GET not allowed"}, 405
     def put(self): return {"message": "PUT not allowed"}, 405

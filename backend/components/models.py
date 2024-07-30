@@ -46,7 +46,9 @@ class Ad_request(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique = True, nullable=False)
     # Can access the influencer who recieved the ad request
     influencer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    influencer = db.relationship('User', foreign_keys=[influencer_id], uselist=False)
     campaign_id = db.Column(db.Integer, db.ForeignKey('campaign.id'), nullable=False)
+    campaign = db.relationship('Campaign', back_populates = 'ad_requests', uselist=False)
     messages = db.Column(db.String, nullable=False)
     requirements = db.Column(db.String, nullable=False)
     payment_amount = db.Column(db.Float, nullable=False)
@@ -73,6 +75,7 @@ class Campaign(db.Model):
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
     created_on = db.Column(db.Date, nullable=False)
+    ad_requests = db.relationship('Ad_request', back_populates = 'campaign')
 
 class Flagged(db.Model):
     __tablename__ = "flagged"

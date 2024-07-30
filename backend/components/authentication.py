@@ -1,11 +1,12 @@
 from flask import jsonify, request, render_template, Blueprint
+from flask_security import auth_required
 from .models import db
 from .extensions import datastore, bcrypt
 
 
 authentication = Blueprint('authentication', __name__)
 
-def check_user(email, password, role):
+def check_user(email, password):
     # Check if email and password is provided
     if not email or not password: return jsonify({"message": "Email or Password not provided"}), 400
     # Check if email is valid
@@ -14,40 +15,17 @@ def check_user(email, password, role):
     # Check password hash
     match = bcrypt.check_password_hash(user.password, password)
     if not match: return jsonify({"message": "Email or Password incorrect"}), 400
-    # Check for role
-    if role not in user.roles: return jsonify({"message": "Invalid Access"}), 403
     # If everything is correct, return authentication token
-    return jsonify({"token": user.get_auth_token(), "email": user.email, "role": role}), 200
+    return {"token": user.get_auth_token(), "email": user.email, "role": str(user.roles[0].name)}, 200
 
-@authentication.get('/')
-def index():
-    # Check if app is working
-    return render_template('index.html')
-
-
-@authentication.post('/influencer-login')
+@authentication.post('/api/auth/login')
 def influencer_login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-    return check_user(email, password, "Influencer")
+    return check_user(email, password)
 
-@authentication.post('/sponsor-login')
-def sponsor_login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    return check_user(email, password, "Sponsor")
-
-@authentication.post('/admin-login')
-def admin_login():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    return check_user(email, password, "Admin")
-
-
-@authentication.post('/user-register')
+@authentication.post('/api/auth/register')
 def user_register():
     data = request.get_json()
     email = data.get('email')
@@ -69,4 +47,3 @@ def user_register():
 
     db.session.commit()
     return jsonify({"token": user.get_auth_token(), "email": user.email, "role": role}), 201
-

@@ -1,0 +1,436 @@
+<template>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+            <a class="navbar-brand" href="#">Welcome Admin</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+          
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                  <a class="nav-link" href="#Profile">Profile</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="#Campaigns">Campaigns</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#Ad_Requests">Ad Requests</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#Flagged_Users">Flagged Users</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                </li>
+              </ul>
+            </div>
+        </nav>
+
+        <div style="margin-top: 56px;">
+
+        <!-- Error Message Display -->
+        {% if "success" in error %}
+        <div class="alert alert-success" role="alert">
+            {{ error }}
+        </div>
+        {% elif error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Profile -->
+         <div id="Profile">
+            <h1>Welcome Admin</h1>
+            <p>Total Users Registered: {{ users.total }}</p>
+            <p>Total Campaigns Created: {{ campaigns.total }}</p>
+            <p>Total Ad Requests: {{ ad_requests.total }}</p>
+            <p>Total Flagged Users: {{ flagged.total }}</p>
+         </div>
+
+        <!-- Users -->
+        <div id="Users">
+            <h3>Users</h3>
+            <!-- In case no users are registered -->
+            {% if users.items | length == 0 %}
+                <p>No Users Registered.</p>
+            {% else %}
+                <br>
+            {% endif %}
+            {% for user in users.items %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ user.name }}</h5>
+                        <p class="card-text"><b>Email</b>: {{ user.email }}</p>
+                        <p class="card-text"><b>Role</b>: {{ user.role }}</p>
+                        {% if user.role == "Influencer" %}
+                        <p class="card-text"><b>Reach</b>: {{ user.reach }}</p>
+                        <p class="card-text"><b>Category</b>: {{ user.category }}</p>
+                        {% elif user.role == "Sponsor" %}
+                        <p class="card-text"><b>Industry</b>: {{ user.industry }}</p>
+                        {% endif %}
+                        <!-- Flag User modal -->
+                        {% if not user.flag %}
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#flagUser{{ user.id }}{{ user.role }}">
+                            Flag User
+                        </button>
+                        
+                        <!-- Flag User Modal -->
+                        <div class="modal fade" id="flagUser{{ user.id }}{{ user.role }}" tabindex="-1" role="dialog" aria-labelledby="flagUser" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <form method="POST" id="flag">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="editProfileModalLabel">Flag User</h5>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="form_id" value="flag">
+                                            <input type="hidden" name="id" value="{{ user.id }}">
+                                            <input type="hidden" name="type" value="{{ user.role }}">
+                                            <!-- Reason input -->
+                                            <div data-mdb-input-init class="form-outline mb-4">
+                                                <input type="text" name="reason" id="reason" class="form-control" required maxlength=250/>
+                                                <label class="form-label" for="reason">Reason</label>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-warning">Flag User</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <br>
+            {% endfor %}
+
+            <!-- Navigation section for User page -->
+            <nav aria-label="User Page navigation">
+                <ul class="pagination">
+                    <!-- Check if there is a previous page -->
+                    {% if users.has_prev %}
+                    <li class="page-item">
+                        <!-- If there is, create a link to the previous page -->
+                        <a class="page-link" href="/admin?page_user={{ users.prev_num }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <!-- If not, show a disabled 'Previous' button -->
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    <!-- Loop through each page number provided by pagination.iter_pages() -->
+                    {% for page_num in users.iter_pages() %}
+                    <!-- Check if the page number exists (not None) -->
+                    {% if page_num %}
+                    <!-- Check if the current page is not the active page -->
+                    {% if page_num != users.page %}
+                    <!-- Create a clickable link for the page number -->
+                    <li class="page-item"><a class="page-link" href="/admin?page_user={{ page_num }}">{{ page_num }}</a></li>
+                    {% else %}
+                    <!-- Highlight the current page as active and not clickable -->
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                    {% else %}
+                    <!-- For gaps in the pagination links, show ellipsis -->
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    <!-- Check if there is a next page -->
+                    {% if users.has_next %}
+                    <li class="page-item">
+                        <!-- If there is, create a link to the next page -->
+                        <a class="page-link" href="/admin?page_user={{ users.next_num }}">Next</a>
+                    </li>
+                    {% else %}
+                    <!-- If not, show a disabled 'Next' button -->
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Campaigns -->
+        <div id="Campaigns">
+            <h3>Campaigns</h3>
+            {% if campaigns.items | length == 0 %}
+                <p>No Campaigns Created.</p>
+            {% else %}
+                <br>
+            {% endif %}
+            {% for campaign in campaigns.items %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ campaign.name }}</h5>
+                        <p class="card-text"><b>Description</b>: {{ campaign.description }}</p>
+                        <p class="card-text"><b>Goals</b>: {{ campaign.goals }}</p>
+                        <p class="card-text"><b>Category</b>: {{ campaign.category }}</p>
+                        <p class="card-text">Active from <b>{{ campaign.start_date }}</b> to <b>{{ campaign.end_date }}</b></p>
+                        <p class="card-text"><b>Budget</b>: {{ campaign.budget }}</p>
+                        <p class="card-text"><b>Visibility</b>: {{ campaign.visibility }}</p>
+                        <a href="/campaign/{{ campaign.id }}" class="btn btn-info">View Campaign</a>
+                    </div>
+                </div>
+                <br>
+            {% endfor %}
+            <!-- Navigation section for pagination controls -->
+            <nav aria-label="Campaign Page navigation">
+                <ul class="pagination">
+                    <!-- Check if there is a previous page -->
+                    {% if campaigns.has_prev %}
+                    <li class="page-item">
+                        <!-- If there is, create a link to the previous page -->
+                        <a class="page-link" href="/admin?page_campaign={{ campaigns.prev_num }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <!-- If not, show a disabled 'Previous' button -->
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    <!-- Loop through each page number provided by pagination.iter_pages() -->
+                    {% for page_num in campaigns.iter_pages() %}
+                    <!-- Check if the page number exists (not None) -->
+                    {% if page_num %}
+                    <!-- Check if the current page is not the active page -->
+                    {% if page_num != campaigns.page %}
+                    <!-- Create a clickable link for the page number -->
+                    <li class="page-item"><a class="page-link" href="/admin?page_campaign={{ page_num }}">{{ page_num }}</a></li>
+                    {% else %}
+                    <!-- Highlight the current page as active and not clickable -->
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                    {% else %}
+                    <!-- For gaps in the pagination links, show ellipsis -->
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    <!-- Check if there is a next page -->
+                    {% if campaigns.has_next %}
+                    <li class="page-item">
+                        <!-- If there is, create a link to the next page -->
+                        <a class="page-link" href="/admin?page_campaign={{ campaigns.next_num }}">Next</a>
+                    </li>
+                    {% else %}
+                    <!-- If not, show a disabled 'Next' button -->
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Ad Requests -->
+        <div id="Ad_Requests">
+            <h3>Ad Requests</h3>
+            {% if ad_requests.items | length == 0 %}
+                <p>No Ad Requests created.</p>
+            {% else %}
+                <br>
+            {% endif %}
+            {% for ad_request in ad_requests.items %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ ad_request.messages }}</h5>
+                        <p class="card-text"><b>Requirements</b>: {{ ad_request.requirements }}</p>
+                        <p class="card-text"><b>Payment Amount</b>: {{ ad_request.payment_amount }}</p>
+                        <p class="card-text"><b>Status</b>: {% if ad_request.status == "Pending" %}
+                        {{ ad_request.status }}{% else %}
+                        {{ ad_request.status }}ed{% endif %}</p>
+                        {% if ad_request.influencer %}
+                        <p class="card-text">Assigned to <b>{{ ad_request.influencer.name }}</b></p>
+                        {% else %}
+                        <p class="card-text"><b>Influencer not assigned</b></p>
+                        {% endif %}
+                    </div>
+                </div>
+                <br>
+            {% endfor %}
+
+            <!-- Navigation section for pagination controls -->
+            <nav aria-label="Ad Requests Page navigation">
+                <ul class="pagination">
+                    <!-- Check if there is a previous page -->
+                    {% if ad_requests.has_prev %}
+                    <li class="page-item">
+                        <!-- If there is, create a link to the previous page -->
+                        <a class="page-link" href="/admin?page_ad_request={{ ad_requests.prev_num }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <!-- If not, show a disabled 'Previous' button -->
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    <!-- Loop through each page number provided by pagination.iter_pages() -->
+                    {% for page_num in ad_requests.iter_pages() %}
+                    <!-- Check if the page number exists (not None) -->
+                    {% if page_num %}
+                    <!-- Check if the current page is not the active page -->
+                    {% if page_num != ad_requests.page %}
+                    <!-- Create a clickable link for the page number -->
+                    <li class="page-item"><a class="page-link" href="/admin?page_ad_request={{ page_num }}">{{ page_num }}</a></li>
+                    {% else %}
+                    <!-- Highlight the current page as active and not clickable -->
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                    {% else %}
+                    <!-- For gaps in the pagination links, show ellipsis -->
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    <!-- Check if there is a next page -->
+                    {% if ad_requests.has_next %}
+                    <li class="page-item">
+                        <!-- If there is, create a link to the next page -->
+                        <a class="page-link" href="/admin?page_ad_request={{ ad_requests.next_num }}">Next</a>
+                    </li>
+                    {% else %}
+                    <!-- If not, show a disabled 'Next' button -->
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+
+        <!-- Flagged User -->
+        <div id="Flagged_Users">
+            <h3>Flagged Users</h3>
+            {% if flagged.items | length == 0 %}
+                <p>No User Flagged.</p>
+            {% else %}
+                <br>
+            {% endif %}
+            {% for user in flagged.items %}
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ user.name }}</h5>
+                        <p class="card-text"><b>Email</b>: {{ user.email }}</p>
+                        <p class="card-text"><b>Role</b>: {{ user.role }}</p>
+                        {% if user.role == "Influencer" %}
+                        <p class="card-text"><b>Reach</b>: {{ user.reach }}</p>
+                        <p class="card-text"><b>Category</b>: {{ user.category }}</p>
+                        {% elif user.role == "Sponsor" %}
+                        <p class="card-text"><b>Industry</b>: {{ user.industry }}</p>
+                        {% endif %}
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#unflagUser{{ user.id }}{{ user.role }}">
+                            Unflag User
+                        </button>
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUser{{ user.id }}{{ user.role }}">
+                            Delete User
+                        </button>
+                        
+                        <!-- Remove Flag User Modal -->
+                        <div class="modal fade" id="unflagUser{{ user.id }}{{ user.role }}" tabindex="-1" role="dialog" aria-labelledby="unflagUser" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <form method="POST" id="flag">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="editProfileModalLabel">Unflag User</h5>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="form_id" value="remove_flag">
+                                            <input type="hidden" name="id" value="{{ user.id }}">
+                                            <input type="hidden" name="type" value="{{ user.role }}">
+                                            <p>Removing Flag, Are you sure?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-success">Unflag User</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Delete User Modal -->
+                        <div class="modal fade" id="deleteUser{{ user.id }}{{ user.role }}" tabindex="-1" role="dialog" aria-labelledby="deleteUser" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <form method="POST" id="delete">
+                                        <div class="alert alert-danger" role="alert">
+                                            Deleting User will remove all associated data.
+                                        </div>
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="editProfileModalLabel">Delete User</h5>
+                                        </div>
+                                        <div class="modal-body">
+                                            <input type="hidden" name="form_id" value="delete_user">
+                                            <input type="hidden" name="email" value="{{ user.email }}">
+                                            <p>Are you sure?</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            <button type="submit" class="btn btn-danger">Delete User</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <br>
+            {% endfor %}
+
+            <!-- Navigation section for pagination controls -->
+            <nav aria-label="Flag Page navigation">
+                <ul class="pagination">
+                    <!-- Check if there is a previous page -->
+                    {% if flagged.has_prev %}
+                    <li class="page-item">
+                        <!-- If there is, create a link to the previous page -->
+                        <a class="page-link" href="/admin?page_flag={{ flagged.prev_num }}">Previous</a>
+                    </li>
+                    {% else %}
+                    <!-- If not, show a disabled 'Previous' button -->
+                    <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                    {% endif %}
+
+                    <!-- Loop through each page number provided by pagination.iter_pages() -->
+                    {% for page_num in flagged.iter_pages() %}
+                    <!-- Check if the page number exists (not None) -->
+                    {% if page_num %}
+                    <!-- Check if the current page is not the active page -->
+                    {% if page_num != flagged.page %}
+                    <!-- Create a clickable link for the page number -->
+                    <li class="page-item"><a class="page-link" href="/admin?page_flag={{ page_num }}">{{ page_num }}</a></li>
+                    {% else %}
+                    <!-- Highlight the current page as active and not clickable -->
+                    <li class="page-item active" aria-current="page">
+                        <span class="page-link">{{ page_num }}</span>
+                    </li>
+                    {% endif %}
+                    {% else %}
+                    <!-- For gaps in the pagination links, show ellipsis -->
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                    {% endfor %}
+
+                    <!-- Check if there is a next page -->
+                    {% if flagged.has_next %}
+                    <li class="page-item">
+                        <!-- If there is, create a link to the next page -->
+                        <a class="page-link" href="/admin?page_flag={{ flagged.next_num }}">Next</a>
+                    </li>
+                    {% else %}
+                    <!-- If not, show a disabled 'Next' button -->
+                    <li class="page-item disabled"><span class="page-link">Next</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+      </div>
+</template>
+
+<script>
+export default {
+name: 'AdminView'
+}
+</script>

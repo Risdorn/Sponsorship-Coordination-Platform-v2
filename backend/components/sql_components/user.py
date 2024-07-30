@@ -1,5 +1,5 @@
 from ..extensions import bcrypt, industries, categories
-from ..models import db, User
+from ..models import db, User, Role
 from datetime import date
 import re
 
@@ -26,9 +26,9 @@ def validate_form(name, email, password, con_pass, role, reach = None, industry 
     if not name or not email or not password: return False, "Invalid format"
     return True, ""
 
-def validate_update_user(user_id, name, password, industry, category, reach):
+def validate_update_user(email, name, password, industry, category, reach):
     # Make sure user exists
-    user = get_user(id=user_id)
+    user = get_user(email=email)
     if not user: return False, "Invalid User ID"
     # Make sure name is not too long
     if name and len(name) > 45: return False, "Name should be less than 45 characters"
@@ -52,6 +52,7 @@ def validate_user(email, password):
     if not user: return None
     # Check if password is correct
     if not bcrypt.check_password_hash(user.password, password): return None
+    user.role = str(user.roles[0].name)
     return user
 
 def create_user(name, email, password, role, industry = None, category = None, reach = None):
@@ -66,8 +67,9 @@ def create_user(name, email, password, role, industry = None, category = None, r
 def get_user(email, id = None):
     # Get user
     # If id is provided, get user by id
-    if id: return User.query.filter_by(id=id).first()
-    user = User.query.filter_by(email=email).first()
+    if id: user = User.query.filter_by(id=id).first()
+    else: user = User.query.filter_by(email=email).first()
+    user.role = str(user.roles[0].name)
     return user
 
 def update_user(email, params):
@@ -88,8 +90,8 @@ def delete_user(email):
     db.session.commit()
     return user
 
-def search_user(name, reach, category):
-    users = User.query.filter(User.roles.any("Influencer"))
+def search_user(name, reach, category, page):
+    users = User.query.filter(User.roles.any(Role.name == "Influencer"))
     if category: users = users.filter_by(category=category)
     if name: users = users.filter(User.name.like('%' + name + '%'))
     # Sort based on reach
@@ -97,5 +99,21 @@ def search_user(name, reach, category):
         users = users.order_by(User.reach.desc())
     elif reach == "Ascending":
         users = users.order_by(User.reach.asc())
-    return users.all()
+    users = users.paginate(page=page, per_page=10, error_out=False)
+    users.pages_iter = []
+    for page in users.iter_pages():
+        users.pages_iter.append(page)
+    for user in users.items:
+        user.role = str(user.roles[0].name)
+    return users
+
+def get_all_users(page):
+    # Get all users
+    users = User.query.filter(User.roles.any(Role.name.in_(["Sponsor", "Influencer"]))).paginate(page=page, per_page=10, error_out=False)
+    users.pages_iter = []
+    for page in users.iter_pages():
+        users.pages_iter.append(page)
+    for user in users.items:
+        user.role = str(user.roles[0].name)
+    return users
         
