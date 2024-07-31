@@ -1,4 +1,4 @@
-from ..models import db, Ad_request
+from ..models import db, Ad_request, Campaign
 from .campaign import get_campaign
 from datetime import date
 import re
@@ -13,7 +13,7 @@ def validate_ad_request(campaign_id, messages, requirements, payment_amount, sta
     # Check if Payment Amount is greater than remaining budget
     campaign = get_campaign(campaign_id)
     if not campaign: return False, "Invalid Campaign ID"
-    if float(payment_amount) > campaign.remianing: return False, "Payment amount is greater than remaining budget"
+    if float(payment_amount) > campaign.remaining: return False, "Payment amount is greater than remaining budget"
     # Check if status is valid
     if status and status not in ["Pending", "Accept", "Reject"]: return False, "Invalid status"
     return True, ""
@@ -90,6 +90,9 @@ def delete_ad_request(ad_request_id):
 
 def get_campaign_ad_requests(campaign_id, page):
     # Get ad requests associated with campaign
+    if page == -1:
+        ad_requests = Ad_request.query.filter_by(campaign_id=campaign_id).all()
+        return ad_requests
     ad_requests = Ad_request.query.filter_by(campaign_id=campaign_id).paginate(page=page, per_page=5, error_out=False)
     ad_requests.pages_iter = []
     for page in ad_requests.iter_pages():
@@ -99,6 +102,14 @@ def get_campaign_ad_requests(campaign_id, page):
 def get_influencer_ad_requests(influencer_id, page):
     # Get ad requests associated with influencer
     ad_requests = Ad_request.query.filter_by(influencer_id=influencer_id).paginate(page=page, per_page=5, error_out=False)
+    ad_requests.pages_iter = []
+    for page in ad_requests.iter_pages():
+        ad_requests.pages_iter.append(page)
+    return ad_requests
+
+def get_sponsor_ad_requests(sponsor_id, page):
+    # Get ad requests associated with sponsor
+    ad_requests = Ad_request.query.join(Campaign).filter(Campaign.sponsor_id == sponsor_id).paginate(page=page, per_page=5, error_out=False)
     ad_requests.pages_iter = []
     for page in ad_requests.iter_pages():
         ad_requests.pages_iter.append(page)

@@ -8,16 +8,16 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
             <li class="nav-item active">
-                <a class="nav-link" href="#Profile">Profile</a>
+                <a class="nav-link" :href="'/' + role + '#Profile'">Profile</a>
             </li>
             <li v-if="role != 'influencer'" class="nav-item">
-                <a class="nav-link" href="#Campaigns">Campaigns</a>
+                <a class="nav-link" :href="'/' + role + '#Campaigns'">Campaigns</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#Ad_Requests">Ad Requests</a>
+                <a class="nav-link" :href="'/' + role + '#Ad_Requests'">Ad Requests</a>
             </li>
             <li v-if="role == 'admin'" class="nav-item">
-                    <a class="nav-link" href="#Flagged_Users">Flagged Users</a>
+                    <a class="nav-link" :href="'/' + role + '#Flagged'">Flagged Users</a>
             </li>
             <li v-if="role == 'sponsor'" class="nav-item">
                 <a  v-if="flag" class="nav-link" disabled>Find Influencers</a>
@@ -28,7 +28,7 @@
                 <a v-else class="nav-link" href="/search">Find Campaigns</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" onclick="logout">Logout</a>
+                <a class="nav-link" href="/logout">Logout</a>
             </li>
             </ul>
         </div>

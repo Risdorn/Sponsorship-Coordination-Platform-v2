@@ -18,7 +18,8 @@ campaign_marshal = {
     "start_date": fields.String,
     "end_date": fields.String,
     "created_on": fields.String,
-    "progress": fields.Float
+    "progress": fields.Float,
+    "length": fields.Integer
 }
 
 pagination_marshal = {
@@ -62,6 +63,7 @@ class Campaigns(Resource):
     @auth_required('token')
     def get(self, campaign_id):
         campaign = get_campaign(campaign_id)
+        campaign.length = get_campaign_ad_requests(campaign.id, 1).total
         if not campaign: return {"message": "Campaign Not Found"}, 400
         return marshal(campaign, campaign_marshal), 200
     
@@ -80,7 +82,7 @@ class Campaigns(Resource):
     def delete(self, campaign_id):
         campaign = get_campaign(campaign_id)
         if not campaign: return {"message": "Campaign Not Found"}, 400
-        ad_requests = get_campaign_ad_requests(campaign.id)
+        ad_requests = get_campaign_ad_requests(campaign.id, -1)
         for ad_request in ad_requests:
             delete_ad_request(ad_request.id)
         delete_campaign(campaign_id)
@@ -117,6 +119,8 @@ class Search_Campaigns(Resource):
             campaigns = get_sponsor_campaigns(args.get('sponsor_id'), int(args.get('page', 1)))
         else:
             campaigns = search_campaign(args.get('name'), args.get('budget'), args.get('category'), int(args.get('page', 1)))
+        for campaign in campaigns.items:
+            campaign.length = get_campaign_ad_requests(campaign.id, 1).total
         return marshal(campaigns, pagination_marshal), 200
     
     def get(self): return {"message": "GET not allowed"}, 405
@@ -128,6 +132,8 @@ class All_Campaigns(Resource):
     def post(self):
         args = search_parser.parse_args()
         campaigns = get_all_campaigns(int(args.get('page', 1)))
+        for campaign in campaigns.items:
+            campaign.length = get_campaign_ad_requests(campaign.id, 1).total
         return marshal(campaigns, pagination_marshal), 200
     
     def get(self): return {"message": "GET not allowed"}, 405

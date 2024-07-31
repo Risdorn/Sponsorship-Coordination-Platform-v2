@@ -6,6 +6,7 @@ import SponsorView from '../views/SponsorView.vue'
 import InfluencerView from '../views/InfluencerView.vue'
 import AdminView from '../views/AdminView.vue'
 import SearchView from '../views/SearchView.vue'
+import CampaignView from '../views/CampaignView.vue'
 
 const routes = [
   {
@@ -27,6 +28,11 @@ const routes = [
     path: '/influencer',
     name: 'influencer',
     component: InfluencerView
+  },
+  {
+    path: '/campaign/:id',
+    name: 'campaign',
+    component: CampaignView
   },
   {
     path: '/search',

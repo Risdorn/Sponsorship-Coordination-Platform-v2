@@ -1,7 +1,6 @@
 <template>
     <div id="Profile">
         <h1>Welcome, {{ user.name }}</h1>
-        <p>{{ user }}</p>
         <p v-if="user.role=='Sponsor'"><b>Industry</b>: {{ user.industry }}</p>
         <p v-if="user.role=='Influencer'"><b>Reach</b>: {{ user.reach }}</p>
         <p v-if="user.role=='Influencer'"><b>Category</b>: {{ user.category }}</p>
@@ -23,12 +22,14 @@
                         <input type="hidden" name="form_id" value="edit_profile">
                         <!-- Name input -->
                         <div data-mdb-input-init class="form-outline mb-4">
+                            <p><b>Current Name</b>: {{ user.name }}</p>
                             <input type="text" name="name" id="Full_Name" v-model="name" class="form-control" maxlength="45" pattern="^[\w\-\s]+$"/>
                             <label class="form-label" for="Full_Name">Full Name</label>
                         </div>
 
                         <!-- Industry input -->
                         <div v-if="user.role=='Sponsor'" data-mdb-input-init class="form-outline mb-4">
+                            <p><b>Current Industry</b>: {{ user.industry }}</p>
                             <select id="Industry" name="industry" v-model="industry" class="form-control">
                                 <option disabled selected>{{ user.industry }}</option>
                                 <option value="Technology">Technology</option>
@@ -80,6 +81,7 @@
 
                         <!-- Category input -->
                         <div v-if="user.role=='Influencer'" data-mdb-input-init class="form-outline mb-4">
+                            <p><b>Current Category</b>: {{ user.category }}</p>
                             <select id="category" name="category" v-model="category" class="form-control">
                                 <option disabled selected>{{ user.category }}</option>
                                 <option value="Beauty">Beauty</option>
@@ -134,6 +136,7 @@
 
                         <!-- Reach input -->
                         <div v-if="user.role=='Influencer'" data-mdb-input-init class="form-outline mb-4">
+                            <p><b>Current Reach</b>: {{ user.reach }}</p>
                             <input type="number" id="Reach" name="reach" v-model="reach" class="form-control" pattern="^\d+$" min=0/>
                             <label class="form-label" for="Reach">Reach</label>
                         </div>
@@ -146,7 +149,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button type="submit" class="btn btn-success">Save changes</button>
+                        <button class="btn btn-success" @click="editProfile">Save changes</button>
                     </div>
                 </form>
             </div>
@@ -164,35 +167,41 @@ export default {
     },
     data() {
     return {
-        name: this.user.name,
-        industry: this.user.industry,
-        category: this.user.category,
-        reach: this.user.reach,
+        name: '',
+        industry: '',
+        category: '',
+        reach: 0,
         password: ''
     }
     },
     methods: {
-    editProfile() {
-        fetch('/edit_profile', {
-            method: 'POST',
+    async editProfile(event) {
+        event.preventDefault();
+        try {
+        const token = localStorage.getItem('token');
+        const email = localStorage.getItem('email');
+        const response = await fetch('http://localhost:5000/api/user/' + email, {
+            method: 'PUT',
             headers: {
-                'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Authentication-Token': token
             },
             body: JSON.stringify({
-                form_id: 'edit_profile',
-                name: this.name,
-                industry: this.industry,
-                category: this.category,
-                reach: this.reach,
-                password: this.password
+            name: this.name,
+            industry: this.industry,
+            category: this.category,
+            reach: this.reach,
+            password: this.password
             })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.reload();
-            }
         });
+        const data = await response.json();
+        if(!response.ok) {
+            throw new Error(data.message || 'Failed to edit profile');
+        }
+        this.$router.go();
+        } catch (error) {
+        console.error('Error:', error);
+        }
     }
     }
 }

@@ -14,7 +14,13 @@ ad_request_marshal = {
     "negotiate": fields.Boolean,
     "created_on": fields.String,
     "accepted_on": fields.String,
-    "rejected_on": fields.String
+    "rejected_on": fields.String,
+    "campaign": fields.Nested({
+        "name": fields.String,
+    }),
+    "influencer": fields.Nested({
+        "name": fields.String,
+    })
 }
 
 pagination_marshal = {
@@ -72,7 +78,7 @@ class Create_Ad_Request(Resource):
     def post(self):
         args = ad_request_parser.parse_args()
         if not args.get('campaign_id'): return {"message": "Campaign ID is required"}, 400
-        valid, message = validate_ad_request(args.get('messages'), args.get('requirements'), args.get('payment_amount'), 'Pending')
+        valid, message = validate_ad_request(args.get('campaign_id'), args.get('messages'), args.get('requirements'), args.get('payment_amount'), 'Pending')
         if not valid: return {"message": message}, 400
         ad_request = create_ad_request(args.get('messages'), args.get('requirements'), args.get('payment_amount'), 'Pending', False, args.get('campaign_id'),
                                        args.get('influencer_id'))
@@ -115,6 +121,7 @@ class All_Ad_Requests(Resource):
         args['page'] = int(args.get('page', 1))
         if args.get('influencer_id'): ad_requests = get_influencer_ad_requests(args.get('influencer_id'), args.get('page'))
         elif args.get('campaign_id'): ad_requests = get_campaign_ad_requests(args.get('campaign_id'), args.get('page'))
+        elif args.get('sponsor_id'): ad_requests = get_sponsor_ad_requests(args.get('sponsor_id'), args.get('page'))
         else: ad_requests = get_all_ad_requests(args.get('page'))
         return marshal(ad_requests, pagination_marshal), 200
     

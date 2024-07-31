@@ -26,7 +26,12 @@
 
             <div v-if="!flag">
                 <!-- Campaigns Page -->
-                <CampaignList role="sponsor" :campaignPage="campaignPage" :sponsor_id="user.id" :campaigns="campaigns" @update-campaigns="updateCampaigns"/>
+                <CampaignList role="sponsor" :campaignPage="campaignPage" :sponsor_id="user.id" :campaigns="campaigns" :campaign="campaign" 
+                @update-campaigns="updateCampaigns" @update-campaign="updateCampaign"/>
+
+                <!-- Ad Requests Page -->
+                <AdRequestList role="sponsor" :adRequestPage="adRequestPage" :ad_requests="adRequests" :ad_request="ad_request" 
+                @update-adRequests="updateAdRequests" @update-adRequest="updateAdRequest"/>
             </div>            
         </div>
     </div>
@@ -36,6 +41,7 @@
 import NavBar from '../components/NavBar.vue';
 import ProfilePage from '../components/ProfilePage.vue';
 import CampaignList from '../components/CampaignList.vue';
+import AdRequestList from '../components/AdRequestList.vue';
 
 export default {
 name: 'SponsorView',
@@ -47,6 +53,9 @@ data() {
         error: null,
         loading: true,
         campaigns: [],
+        campaign: null,
+        adRequests: [],
+        ad_request: null
     }
 },
 methods: {
@@ -98,7 +107,7 @@ methods: {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:5000/api/ad_requests', {
-                method: 'GET',
+                method: 'POST',
                 headers: {
                     'Authentication-Token': token,
                     'Content-Type': 'application/json'
@@ -120,15 +129,61 @@ methods: {
     updateCampaigns(updatedCampaigns) {
         this.campaigns = updatedCampaigns;
         console.log(this.campaigns);
+    },
+    async updateCampaign(campaign_id) {
+        const id = campaign_id;
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/campaign/' + id, {
+                method: 'GET',
+                headers: {
+                    'Authentication-Token': token
+                }
+            })
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to fetch campaign');
+            }
+            this.campaign = data;
+        } catch (error) {
+            this.error = error.message;
+        }
+        console.log(this.campaign);
+    },
+    updateAdRequests(updatedAdRequests) {
+        this.adRequests = updatedAdRequests;
+        console.log(this.adRequests);
+    },
+    async updateAdRequest(ad_request_id) {
+        const id = ad_request_id;
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/api/ad_request/' + id, {
+                method: 'GET',
+                headers: {
+                    'Authentication-Token': token
+                }
+            })
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to fetch ad request');
+            }
+            this.ad_request = data;
+        } catch (error) {
+            this.error = error.message;
+        }
     }
 },
 components: {
     NavBar,
     ProfilePage,
     CampaignList,
+    AdRequestList
 },
 created() {
     this.user = this.getUser();
+    this.campaign = {'name': '', 'description': '', 'start_date': '', 'end_date': '', 'budget': -1, 'goals': '', 'visibility': ''};
+    this.ad_request = {'messages':'', 'requirements':'', 'payment_amount':-1, 'campaign':{'name':''}, 'influencer':{'name':''}};
     console.log(this.user);
 }
 }

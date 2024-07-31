@@ -147,7 +147,7 @@
                         </div><br>
                         <div v-if="role=='sponsor'">
                             <!-- Edit Campaign Button -->
-                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editCampaign" :id="campaign.id" @click="ChangeId">
+                            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editCampaign" :id="campaign.id" @click="ChangeCampaign">
                                 Edit Campaign
                             </button>
                             <!-- Delete Campaign Button -->
@@ -160,7 +160,7 @@
             </div>
 
             <!-- Edit Campaign Modal -->
-            <div v-if="role=='sponsor'" class="modal fade" id="editCampaign" tabindex="-1" role="dialog" aria-labelledby="editCampaignLabel" aria-hidden="true">
+            <div v-if="role=='sponsor' && campaign" class="modal fade" id="editCampaign" tabindex="-1" role="dialog" aria-labelledby="editCampaignLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                 <div class="modal-content">
                     <form id="edit_campaign">
@@ -170,26 +170,29 @@
                         <div class="modal-body">
                             <!-- Name input -->
                             <div data-mdb-input-init class="form-outline mb-4">
+                                <p><b>Cuurent Name</b>: {{ campaign.name }}</p>
                                 <input type="text" name="name" id="name" v-model="name" class="form-control" maxlength=45/>
                                 <label class="form-label" for="name">Campaign Name</label>
                             </div>
 
                             <!-- Description input -->
                             <div data-mdb-input-init class="form-outline mb-4">
+                                <p><b>Cuurent Description</b>: {{ campaign.description }}</p>
                                 <input type="text" id="Description" name="description" v-model="description" class="form-control" maxlength=250/>
                                 <label class="form-label" for="description">Description</label>
                             </div>
 
                             <!-- Goals input -->
                             <div data-mdb-input-init class="form-outline mb-4">
+                                <p><b>Cuurent Goals</b>: {{ campaign.goals }}</p>
                                 <input type="text" id="Goals" name="goals" v-model="goals" class="form-control" maxlength=250/>
                                 <label class="form-label" for="goals">Goals</label>
                             </div>
 
                             <!-- category input -->
                             <div data-mdb-input-init class="form-outline mb-4">
+                                <p><b>Cuurent Category</b>: {{ campaign.category }}</p>
                                 <select id="category" name="category" v-model="category" class="form-control">
-                                    <option disabled selected>None</option>
                                     <option value="Beauty">Beauty</option>
                                     <option value="Fashion">Fashion</option>
                                     <option value="Fitness">Fitness</option>
@@ -242,12 +245,14 @@
 
                             <!-- Budget input -->
                             <div data-mdb-input-init class="form-outline mb-4">
+                                <p><b>Cuurent Budget</b>: {{ campaign.budget }}</p>
                                 <input type="number" id="Budget" name="budget" v-model="budget" class="form-control" pattern="^\d+$"/>
                                 <label class="form-label" for="budget">Budget</label>
                             </div>
 
                             <!-- Visibility input -->
                             <div data-mdb-input-init class="form-outline mb-4">
+                                <p><b>Cuurent Visibility</b>: {{ campaign.visibility }}</p>
                                 <select id="Visibility" name="visibility" v-model="visibility" class="form-control">
                                     <option value="Public" selected>Public</option>
                                     <option value="Private">Private</option>
@@ -257,12 +262,14 @@
 
                             <!-- Start Date input -->
                             <div data-mdb-input-init class="form-outline mb-4">
+                                <p><b>Cuurent Start Date</b>: {{ campaign.start_date }}</p>
                                 <input type="date" id="Start_date" name="start_date" v-model="start_date" class="form-control"/>
                                 <label class="form-label" for="start_date">Start Date</label>
                             </div>
 
                             <!-- End Date input -->
                             <div data-mdb-input-init class="form-outline mb-4">
+                                <p><b>Cuurent End Date</b>: {{ campaign.end_date }}</p>
                                 <input type="date" id="End_date" name="end_date" v-model="end_date" class="form-control"/>
                                 <label class="form-label" for="end_date">End Date</label>
                             </div>
@@ -343,7 +350,8 @@ export default {
     campaignPage: Function,
     role: String,
     sponsor_id: Number,
-    campaigns: Object
+    campaigns: Object,
+    campaign: Object
   },
     data() {
         return {
@@ -441,6 +449,10 @@ export default {
         ChangeId(event) {
             this.id = event.target.id;
         },
+        async ChangeCampaign(event){
+            this.id = event.target.id;
+            this.$emit('update-campaign', this.id)
+        },
         async handlePageChange(page_num) {
             try {
                 const updatedCampaigns = await this.campaignPage(page_num);
@@ -449,9 +461,6 @@ export default {
                 console.error(error);
             } finally {
                 this.loading = false;
-                console.log(this.loading);
-                console.log(this.campaigns);
-                console.log(this.campaigns.items);
             }
         }
     },
