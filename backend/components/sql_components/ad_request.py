@@ -33,6 +33,7 @@ def validate_revert_ad(ad_request_id, status):
     ad_request = get_ad_request(ad_request_id)
     if not ad_request: return False, "Invalid Ad Request ID"
     # Ad Request can only be reverted if it is accepted or rejected
+    print(status)
     if status not in ["Accept", "Reject"]: return False, "Invalid status"
     # If status is Accept, check if payment amount is greater than remaining budget
     campaign = get_campaign(ad_request.campaign_id)

@@ -5,7 +5,7 @@
         <p v-if="users.items.length == 0">No Users Registered.</p>
         <br v-else>
         <!-- Loop through each user in the users array -->
-        <div v-for="user in users.items">
+        <div v-for="user in users.items" :key="user.id">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">{{ user.name }}</h5>
@@ -15,11 +15,11 @@
                     <p v-if="user.role=='Influencer'" class="card-text"><b>Category</b>: {{ user.category }}</p>
                     <p v-if="user.role=='Sponsor'" class="card-text"><b>Industry</b>: {{ user.industry }}</p>
                     <!-- Flag User modal -->
-                    <button v-if="!user.flag && role=='admin'" type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#flagUser" :id="user.id" onclick="changeId">
+                    <button v-if="!user.flag && role=='admin'" type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#flagUser" :id="user.id" @click="changeId">
                         Flag User
                     </button>
                     <!-- Send Ad Request Button -->
-                    <button v-if="role=='sponsor'" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestAd" :id="user.id" onclick="changeId">
+                    <button v-if="role=='sponsor'" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#requestAd" :id="user.id" @click="changeId">
                         Request
                     </button>
                 </div>
@@ -44,7 +44,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" class="btn btn-warning">Flag User</button>
+                            <button class="btn btn-warning">Flag User</button>
                         </div>
                     </form>
                 </div>
@@ -60,8 +60,8 @@
                             <h5 class="modal-title" id="requestAd">Send an Ad Request</h5>
                         </div>
                         <div class="modal-body">
-                            <select v-for="campaign in campaigns" class="form-select" name="campaign_id" id="Campaign" v-model="campaign_id" aria-label="Default select example" required>
-                                <option :value="campaign.id">{{ campaign.name }}</option>
+                            <select class="form-select" name="campaign_id" id="Campaign" v-model="campaign_id" aria-label="Default select example" required>
+                                <option v-for="campaign in campaigns" :key="campaign.id" :value="campaign.id">{{ campaign.name }}</option>
                             </select>
                             <label class="form-label" for="Campaign">Campaign</label>
                             <input type="text" name="message" id="Messages" v-model="messages" class="form-control" required maxlength=250/>
@@ -73,7 +73,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button class="btn btn-primary" onclick="sendAdRequest">Request</button>
+                            <button class="btn btn-primary" data-bs-dismiss="modal" @click="sendAdRequest">Request</button>
                         </div>
                     </form>
                 </div>
@@ -92,13 +92,13 @@
                 <li v-else class="page-item disabled"><span class="page-link">Previous</span></li>
 
                 <!-- Loop through each page number provided by pagination.iter_pages() -->
-                <div v-for="page_num in users.iter_pages()">
+                <div v-for="(page_num, index) in users.pages_iter" :key="index">
                     <!-- Check if the page number exists (not None) -->
                     <li v-if="page_num" class="page-item">
                         <!-- Check if the current page is not the active page -->
                         <a v-if="page_num != users.page" class="page-link" @click="handlePageChange(page_num)">{{ page_num }}</a>
                         <!-- Highlight the current page as active and not clickable -->
-                        <span v-else class="page-link">{{ page_num }}</span>
+                        <span v-else class="page-link disabled">{{ page_num }}</span>
                     </li>
                     <!-- For gaps in the pagination links, show ellipsis -->
                     <li v-else class="page-item disabled"><span class="page-link">...</span></li>
@@ -120,56 +120,29 @@
 export default {
     name: 'UserList',
     props: {
-        userPage: Function,
+        users: Object,
         role: String,
         campaigns: Array,
     },
     data() {
     return {
-        users: null,
         reason: '',
         id: '',
         campaign_id: '',
         messages: '',
         requirements: '',
-        payment_amount: 0
+        payment_amount: 0,
     };
     },
     methods: {
-        async flagUser() {
-            try {
-                const response = await fetch('http://localhost:5000/api/flag', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization-Token': localStorage.getItem('token')
-                    },
-                    body: JSON.stringify({
-                        user_id: this.id,
-                        reason: this.reason
-                    })
-                });
-                const data = await response.json();
-                if (!response.ok) {
-                    throw new Error(data.message || 'Failed to flag user');
-                }
-                this.reason = '';
-                console.log(data);
-                this.$router.go();
-            } catch (error) {
-                console.error(error);
-            }
-        },
-        async handlePageChange(page_num) {
-            this.users = await this.userPage(page_num);
-        },
-        async sendAdRequest() {
+        async sendAdRequest(event) {
+            event.preventDefault();
             try {
                 const response = await fetch('http://localhost:5000/api/ad_request', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization-Token': localStorage.getItem('token')
+                        'Authentication-Token': localStorage.getItem('token')
                     },
                     body: JSON.stringify({
                         influencer_id: this.id,
@@ -186,18 +159,42 @@ export default {
                 this.messages = '';
                 this.requirements = '';
                 this.payment_amount = 0;
+                this.$emit('success', 'Ad request sent successfully');
                 console.log(data);
+            } catch (error) {
+                this.$emit('error', error.message);
+            }
+        },
+        async flagUser() {
+            try {
+                const response = await fetch('http://localhost:5000/api/user/flag', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authentication-Token': localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({
+                        user_id: this.id,
+                        reason: this.reason
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to flag user');
+                }
+                this.reason = '';
+                this.$emit('success', 'User flagged successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
             }
+        },
+        async handlePageChange(page_num) {
+            this.$emit('page-change', page_num);
         },
         changeId(event) {
             this.id = event.target.id;
         }
     },
-    created() {
-        this.handlePageChange(1);
-    }
 };
 </script>

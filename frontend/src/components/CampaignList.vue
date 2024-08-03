@@ -123,7 +123,7 @@
                 </div>
                 </div>
             </div><br>
-            <p v-if="loading || !campaigns || !campaigns.items">No campaigns published yet.</p>
+            <p v-if="!campaigns || !campaigns.items">No campaigns published yet.</p>
             <div v-else v-for="campaign in campaigns.items" :key="campaign.id">
                 <div class="card">
                     <div class="card-header">
@@ -325,7 +325,7 @@
                             <!-- Check if the current page is not the active page -->
                             <a v-if="page_num != campaigns.page" class="page-link" @click="handlePageChange(page_num)">{{ page_num }}</a>
                             <!-- Highlight the current page as active and not clickable -->
-                            <span v-else class="page-link">{{ page_num }}</span>
+                            <span v-else class="page-link disabled">{{ page_num }}</span>
                         </li>
                         <!-- For gaps in the pagination links, show ellipsis -->
                         <li v-else class="page-item disabled"><span class="page-link">...</span></li>
@@ -347,7 +347,6 @@
 export default {
   name: 'CampaignList',
   props: {
-    campaignPage: Function,
     role: String,
     sponsor_id: Number,
     campaigns: Object,
@@ -364,7 +363,6 @@ export default {
             start_date: null,
             end_date: null,
             id: null,
-            loading: true,
         };
     },
     methods: {
@@ -394,9 +392,10 @@ export default {
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to add campaign');
                 }
+                this.$emit('success', 'Campaign added successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
             }
         },
         async editCampaign(event) {
@@ -423,9 +422,10 @@ export default {
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to edit campaign');
                 }
+                this.$emit('success', 'Campaign edited successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
             }
         },
         async deleteCampaign(event) {
@@ -441,9 +441,10 @@ export default {
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to delete campaign');
                 }
+                this.$emit('success', 'Campaign deleted successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
             }
         },
         ChangeId(event) {
@@ -454,18 +455,8 @@ export default {
             this.$emit('update-campaign', this.id)
         },
         async handlePageChange(page_num) {
-            try {
-                const updatedCampaigns = await this.campaignPage(page_num);
-                this.$emit('update-campaigns', updatedCampaigns);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                this.loading = false;
-            }
+            this.$emit('update-campaigns', page_num);
         }
     },
-    created() {
-        this.handlePageChange(1);
-    }
 }
 </script>

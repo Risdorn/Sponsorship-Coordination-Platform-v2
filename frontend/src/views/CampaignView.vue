@@ -1,9 +1,21 @@
 <template>
-  <div v-if="!loading">
+  <div v-if="loading" class="text-center">
+      <div class="spinner-border" role="status">
+          <span class="visually-hidden">Loading...</span>
+      </div>
+  </div>
+  <div v-else>
     <!-- Navigation bar -->
-    <NavBar :name="user.name" :role="user.role" :flag="flag"/>
+    <NavBar :name="user.name" :role="user.role" :flag="user.flag"/>
 
-    <div style="margin-top: 56px;">
+    <div v-if="user.flag">
+      <div  class="alert alert-danger" role="alert">
+        You have been flagged, kindly make the below changes before your profile can be activated again.<br>
+        Reason: {{ user.reason }}
+      </div>
+    </div>
+
+    <div v-else style="margin-top: 56px;">
     
     <!-- Error message display -->
     <div v-if="success" class="alert alert-success" role="alert">
@@ -33,7 +45,7 @@
         </div>
     </div><br>
 
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAdRequest">
+    <button v-if="user.role=='sponsor'" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAdRequest">
       Add Ad Request
     </button>
     <!-- Add Ad Request Modal -->
@@ -74,8 +86,8 @@
     </div>
 
     <!-- Ad Requests -->
-    <AdRequestList :role="user.role" :adRequestPage="adRequestPage" :ad_requests="adRequests" :ad_request="ad_request" 
-    @update-adRequests="updateAdRequests" @update-adRequest="updateAdRequest"/>
+    <AdRequestList v-if="!ad_loading" :role="user.role" :ad_requests="adRequests" :ad_request="ad_request" 
+    @update-adRequests="adRequestPage" @update-adRequest="updateAdRequest" @error="error_message" @success="success_message"/>
 
     </div>
   </div>
@@ -98,6 +110,7 @@ export default {
       error: null,
       success: null,
       flag: null,
+      ad_loading: true,
       adRequests: [],
       ad_request: null,
     };
@@ -144,15 +157,18 @@ export default {
             throw new Error(data.message || 'Failed to add ad request');
         }
         this.success = 'Ad request added successfully';
+        this.error = null;
         this.messages = '';
         this.requirements = '';
         this.payment_amount = -1;
         this.$router.go();
       } catch (error) {
         this.error = error.message;
+        this.success = null;
       }
     },
     async adRequestPage(page){
+      this.ad_loading = true;
       try {
         console.log("adRequestPage");
         const response = await fetch('http://localhost:5000/api/ad_requests', {
@@ -170,13 +186,12 @@ export default {
         if (!response.ok) {
             throw new Error(data.message || 'Failed to fetch ad requests');
         }
-        return data;
+        this.adRequests = data;
       } catch (error) {
         this.error = error.message;
+      } finally {
+        this.ad_loading = false;
       }
-    },
-    updateAdRequests(adRequests) {
-      this.adRequests = adRequests;
     },
     async updateAdRequest(id) {
       try {
@@ -189,18 +204,28 @@ export default {
         });
         this.ad_request = await response.json();
       } catch (error) {
-        this.error = error.message;
+        console.log(error);
       }
-    }
+    },
+    async initializePage(){
+      await this.getUser();
+      await this.getCampaign();
+      await this.adRequestPage(1);
+      this.user.role = this.user.role.toLowerCase();
+      this.ad_request = {'messages':'', 'requirements':'', 'payment_amount':-1, 'campaign':{'name':''}, 'influencer':{'name':''}};
+      this.loading = false;
+    },
+    error_message(message){
+      this.error = message;
+      this.success = null;
+    },
+    success_message(message){
+      this.success = message;
+      this.error = null;
+    },
   },
   async created() {
-    await this.getUser();
-    this.user.role = this.user.role.toLowerCase();
-    await this.getCampaign();
-    this.ad_request = {'messages':'', 'requirements':'', 'payment_amount':-1, 'campaign':{'name':''}, 'influencer':{'name':''}};
-    console.log(this.campaign);
-    console.log(this.user);
-    this.loading = false;
+    this.initializePage();
   },
   components: {
     NavBar,

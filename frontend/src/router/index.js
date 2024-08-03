@@ -7,6 +7,7 @@ import InfluencerView from '../views/InfluencerView.vue'
 import AdminView from '../views/AdminView.vue'
 import SearchView from '../views/SearchView.vue'
 import CampaignView from '../views/CampaignView.vue'
+import StatsView from '../views/StatsView.vue'
 
 const routes = [
   {
@@ -45,6 +46,11 @@ const routes = [
     component: AdminView
   },
   {
+    path: '/stats',
+    name: 'stats',
+    component: StatsView
+  },
+  {
     path: '/:pathMatch(.*)*', // Catch-all route for undefined paths
     redirect: '/login'
   }
@@ -79,13 +85,7 @@ router.beforeEach((to, from, next) => {
   } else if (to.name === 'admin' && role !== 'admin') {
     // Wrong dashboard for role
     next({ name: role === 'sponsor' ? 'sponsor' : role === 'influencer' ? 'influencer' : 'login' })
-  } else if(to.name === 'logout'){
-    // Logout
-    localStorage.removeItem('token')
-    localStorage.removeItem('role')
-    localStorage.removeItem('email')
-    next({ name: 'login' })
-  }else {
+  } else {
     // Continue to route
     next()
   }

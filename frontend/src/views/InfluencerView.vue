@@ -2,9 +2,9 @@
     <div v-if="!loading">
 
         <!-- Navigation Bar -->
-        <NavBar :name="user.name" role="influencer" :flag="flag"/>
+        <NavBar :name="user.name" role="influencer" :flag="user.flag"/>
 
-        <div style="margin-top: 56px;">
+        <div v-if="!user.flag" style="margin-top: 56px;">
             <!-- Error message display -->
             <div v-if="success" class="alert alert-success" role="alert">
                 {{ success }}
@@ -13,18 +13,20 @@
                 {{ error }}
             </div>
             <!-- Flag message display -->
-            <div v-if="flag" class="alert alert-danger" role="alert">
+            <div v-if="user.flag" class="alert alert-danger" role="alert">
                 You have been flagged, kindly make the below changes before your profile can be activated again.<br>
-                Reason: {{ flag.reason }}
+                Reason: {{ user.reason }}
             </div>
 
-            <!-- Profile Page -->
-            <ProfilePage :user="user" :flag="flag"/>
+            <div v-else>
+                <!-- Profile Page -->
+                <ProfilePage :user="user" @error="error_message" @success="success_message"/>
 
-            <div v-if="!flag">
-            <!-- Ad Requests Page -->
-            <AdRequestList role="influencer" :adRequestPage="adRequestPage" :ad_requests="adRequests" :ad_request="ad_request" 
-            @update-adRequests="updateAdRequests" @update-adRequest="updateAdRequest"/>
+                <div v-if="!flag">
+                <!-- Ad Requests Page -->
+                <AdRequestList v-if="!ad_loading" role="influencer" :ad_requests="adRequests" :ad_request="ad_request" 
+                @update-adRequests="adRequestPage" @update-adRequest="updateAdRequest" @error="error_message" @success="success_message"/>
+                </div>
             </div>
 
         </div>
@@ -41,10 +43,10 @@ name: 'InfluencerView',
 data() {
     return {
         user: null,
-        flag: null,
         success: null,
         error: null,
         loading: true,
+        ad_loading: true,
         adRequests: [],
         ad_request: null
     }
@@ -67,11 +69,10 @@ methods: {
             this.user = data;
         } catch (error) {
             this.error = error.message;
-        } finally {
-            this.loading = false;
         }
     },
     async adRequestPage(page) {
+        this.ad_loading = true;
         try {
             const token = localStorage.getItem('token');
             const response = await fetch('http://localhost:5000/api/ad_requests', {
@@ -85,17 +86,17 @@ methods: {
                     page: page
                 })
             });
+            //console.log(response.json());
             const data = await response.json();
             if (!response.ok) {
                 throw new Error(data.message || 'Failed to fetch ad requests');
             }
-            return data;
+            this.adRequests = data;
         } catch (error) {
-            this.error = error.message;
+            console.log(error);
+        } finally {
+            this.ad_loading = false;
         }
-    },
-    async updateAdRequests(data) {
-        this.adRequests = data;
     },
     async updateAdRequest(id) {
         try {
@@ -114,11 +115,25 @@ methods: {
         } catch (error) {
             this.error = error.message;
         }
+    },
+    async initializePage(){
+        await this.getUser();
+        await this.adRequestPage(1);
+        console.log(this.adRequests);
+        this.ad_request = {'messages':'', 'requirements':'', 'payment_amount':-1, 'campaign':{'name':''}, 'influencer':{'name':''}};
+        this.loading = false;
+    },
+    error_message(message){
+        this.error = message;
+        this.success = null;
+    },
+    success_message(message){
+        this.success = message;
+        this.error = null;
     }
 },
 created() {
-    this.getUser();
-    this.ad_request = {'messages':'', 'requirements':'', 'payment_amount':-1, 'campaign':{'name':''}, 'influencer':{'name':''}};
+    this.initializePage();
 },
 components: {
     NavBar,

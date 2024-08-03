@@ -89,6 +89,9 @@ def delete_campaign(campaign_id):
 
 def get_sponsor_campaigns(sponsor_id, page):
     # Get campaigns associated with sponsor
+    if page == -1:
+        campaigns = Campaign.query.filter_by(sponsor_id=sponsor_id).all()
+        return campaigns
     campaigns = Campaign.query.filter_by(sponsor_id=sponsor_id).paginate(page=page, per_page=5, error_out=False)
     campaigns.pages_iter = []
     for page in campaigns.iter_pages():
@@ -103,6 +106,7 @@ def search_campaign(name, budget, category, page):
     if category: campaigns = campaigns.filter_by(category=category)
     if name: campaigns = Campaign.query.filter(Campaign.name.like('%' + name + '%'))
     # Sort based on budget
+    print(budget)
     if budget == "Descending":
         campaigns = campaigns.order_by(Campaign.budget.desc())
     elif budget == "Ascending":

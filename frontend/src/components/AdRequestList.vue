@@ -1,7 +1,7 @@
 <template>
     <div id="Ad_Requests">
         <h3>Ad Requests</h3>
-        <div v-if="loading || !ad_requests || ad_requests.items.length==0">
+        <div v-if="!ad_requests || ad_requests.items.length==0">
             <p v-if="role=='sponsor'">No Ad Requests sent yet.</p>
             <p v-else-if="role=='influencer'">No Ad Requests received yet.</p>
         </div>
@@ -14,8 +14,10 @@
                     <p class="card-text"><b>Messages</b>: {{ ad_request.messages }}</p>
                     <p class="card-text"><b>Requirements</b>: {{ ad_request.requirements }}</p>
                     <p class="card-text"><b>Payment Amount</b>: {{ ad_request.payment_amount }}</p>
-                    <p v-if="!ad_request.influencer.name" class="card-text"><b>Influencer Not Assigned</b></p>
-                    <p v-else class="card-text">Assigned to <b>{{ ad_request.influencer.name }}</b></p>
+                    <div v-if="role!='influencer'">
+                        <p v-if="!ad_request.influencer.name" class="card-text"><b>Influencer Not Assigned</b></p>
+                        <p v-else class="card-text">Assigned to <b>{{ ad_request.influencer.name }}</b></p>
+                    </div>
                     <div v-if="role=='sponsor' && ad_request.status=='Pending' && !ad_request.negotiate">
                         <p><b>Status</b>: {{ ad_request.status }}</p>
                         <!-- Edit Ad Request Button -->
@@ -34,11 +36,19 @@
                         </button>
                     </div>
                     <div v-else-if="role=='influencer' && !ad_request.negotiate">
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#revertAd" :id="ad_request.id" @click="changeAd">
-                            Revert
+                        <div v-if="ad_request.influencer.name">
+                            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#revertAd" :id="ad_request.id" @click="changeAd">
+                                Revert
+                            </button>
+                            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#negotiateAd" :id="ad_request.id" @click="changeAd">
+                                Negotiate
+                            </button>
+                        </div>
+                        <button v-else type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#negotiateAd" :id="ad_request.id" @click="changeAd">
+                                Request
                         </button>
                     </div>
-                    <p v-else-if="ad_request.status='Pending'"><b>Status</b>: {{ ad_request.status }}</p>
+                    <p v-else-if="ad_request.status=='Pending'"><b>Status</b>: {{ ad_request.status }}</p>
                     <p v-else><b>Status</b>: {{ ad_request.status }}ed</p>
                 </div>
             </div>
@@ -55,16 +65,42 @@
                     </div>
                     <div class="modal-body">
                         <label class="form-label">Would you like to Accept or Reject?</label><br>
-                        <label class="form-label">Campaign <b>{{ ad_request.campaign.name }}</b></label><br>
+                        <label class="form-label"><b>{{ ad_request.campaign.name }}</b></label><br>
                         <label class="form-label"><b>Messages</b>: {{ ad_request.messages }}</label><br>
                         <label class="form-label"><b>Requirements</b>: {{ ad_request.requirements }}</label><br>
                         <label class="form-label"><b>Payment Amount</b>: {{ ad_request.payment_amount }}</label><br>
-                        <label class="form-label">Assigned to <b>{{ ad_request.influencer.name }}</b></label>
+                        <label v-if="role=='sponsor'" class="form-label">Assigned to <b>{{ ad_request.influencer.name }}</b></label>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        <button value="Accept" class="btn btn-success" @click="revertAd('Accept')">Accept</button>
-                        <button value="Reject" class="btn btn-danger" @click="revertAd('Reject')">Reject</button>
+                        <button class="btn btn-success" @click="revertAd($event, 'Accept')">Accept</button>
+                        <button  class="btn btn-danger" @click="revertAd($event, 'Reject')">Reject</button>
+                    </div>
+                </form>
+            </div>
+            </div>
+        </div>
+
+        <!-- Negotiate Ad Request Modal -->
+        <div v-if="ad_request" class="modal fade" id="negotiateAd" tabindex="-1" role="dialog" aria-labelledby="negotiateAd" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <form id="revert_ad">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="negotiateAd">Revert to Ad Request</h5>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label"><b>{{ ad_request.campaign.name }}</b></label><br>
+                        <label class="form-label"><b>Messages</b>: {{ ad_request.messages }}</label><br>
+                        <label class="form-label"><b>Requirements</b>: {{ ad_request.requirements }}</label><br>
+                        <label class="form-label"><b>Payment Amount</b>: {{ ad_request.payment_amount }}</label><br>
+                        <input type="number" name="payment_amount" id="Payment_Amount" v-model="payment_amount" class="form-control" min=0 pattern="^\d+$"/>
+                        <label class="form-label" for="Payment_Amount">Payment Amount</label><br>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button class="btn btn-success" @click="negotiateAd">Send</button>
                     </div>
                 </form>
             </div>
@@ -145,7 +181,7 @@
                         <!-- Check if the current page is not the active page -->
                         <a v-if="page_num != ad_requests.page" class="page-link" @click="handlePageChange(page_num)">{{ page_num }}</a>
                         <!-- Highlight the current page as active and not clickable -->
-                        <span v-else class="page-link">{{ page_num }}</span>
+                        <span v-else class="page-link disabled">{{ page_num }}</span>
                     </li>
                     <!-- For gaps in the pagination links, show ellipsis -->
                     <li v-else class="page-item disabled"><span class="page-link">...</span></li>
@@ -168,7 +204,6 @@
 export default {
     name: 'AdRequestList',
     props: {
-        adRequestPage: Function,
         role: String,
         ad_requests: Object,
         ad_request: Object
@@ -176,24 +211,12 @@ export default {
     data() {
         return {
             id: '',
-            ad: null,
             messages: '',
             requirements: '',
             payment_amount: 0,
-            loading: true,
         };
     },
     methods: {
-        async handlePageChange(page_num) {
-            try {
-                const data = await this.adRequestPage(page_num);
-                this.$emit('update-adRequests', data);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                this.loading = false;
-            }
-        },
         async revertAd(event, action) {
             event.preventDefault();
             try {
@@ -204,16 +227,41 @@ export default {
                         'Authentication-Token': localStorage.getItem('token')
                     },
                     body: JSON.stringify({
-                        action: action
+                        status: action
                     })
                 });
                 const data = await response.json();
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to revert');
                 }
+                this.$emit('success', 'Reverted successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
+            }
+        },
+        async negotiateAd(event){
+            event.preventDefault();
+            try {
+                const response = await fetch('http://localhost:5000/api/ad_request/negotiate/' + this.id, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authentication-Token': localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({
+                        payment_amount: this.payment_amount,
+                        influencer_email: localStorage.getItem('email')
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Failed to negotiate');
+                }
+                this.$emit('success', 'Negotiated successfully');
+                this.$router.go();
+            } catch (error) {
+                this.$emit('error', error.message);
             }
         },
         async editAd(event) {
@@ -235,9 +283,10 @@ export default {
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to edit');
                 }
+                this.$emit('success', 'Edited successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
             }
         },
         async deleteAd(event) {
@@ -253,10 +302,14 @@ export default {
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to delete');
                 }
+                this.$emit('success', 'Deleted successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
             }
+        },
+        async handlePageChange(page_num) {
+            this.$emit('update-adRequests', page_num);
         },
         async changeAd(event) {
             this.id = event.target.id;
@@ -266,10 +319,5 @@ export default {
             this.id = event.target.id;
         }
     },
-    created() {
-        this.handlePageChange(1);
-        console.log(this.ad_requests);
-        console.log(this.role);
-    }
 };
 </script>

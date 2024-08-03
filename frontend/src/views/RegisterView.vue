@@ -225,7 +225,7 @@ data() {
             localStorage.setItem('token', data.token);
             localStorage.setItem('role', data.role);
             localStorage.setItem('email', data.email);
-            this.$router.push('/role');
+            this.$router.push('/' + data.role);
         }
     },
 },

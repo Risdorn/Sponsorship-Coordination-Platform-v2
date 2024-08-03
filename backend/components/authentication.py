@@ -18,15 +18,19 @@ def check_user(email, password):
     # If everything is correct, return authentication token
     return {"token": user.get_auth_token(), "email": user.email, "role": str(user.roles[0].name)}, 200
 
+@authentication.get('/api/auth/test')
+def test():
+    return jsonify({"message": "Authentication Service"}), 200
+
 @authentication.post('/api/auth/login')
-def influencer_login():
+def login():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
     return check_user(email, password)
 
 @authentication.post('/api/auth/register')
-def user_register():
+def register():
     data = request.get_json()
     email = data.get('email')
     name = data.get('name')

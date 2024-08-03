@@ -162,8 +162,7 @@
 export default {
     name: 'ProfilePage',
     props: {
-    user: Object,
-    flag: Boolean
+    user: Object
     },
     data() {
     return {
@@ -198,9 +197,10 @@ export default {
         if(!response.ok) {
             throw new Error(data.message || 'Failed to edit profile');
         }
+        this.$emit('success', 'Profile edited successfully');
         this.$router.go();
         } catch (error) {
-        console.error('Error:', error);
+        this.$emit('error', error.message);
         }
     }
     }

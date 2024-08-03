@@ -28,7 +28,11 @@
                 <a v-else class="nav-link" href="/search">Find Campaigns</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/logout">Logout</a>
+                <a v-if="flag" class="nav-link" disabled>Stats</a>
+                <a v-else class="nav-link" href="/stats">Stats</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" @click="logout">Logout</a>
             </li>
             </ul>
         </div>
@@ -37,11 +41,20 @@
 
 <script>
 export default {
-  name: 'NavBar',
-  props: {
-    name: String,
-    role: String,
-    flag: Boolean
-  },
+    name: 'NavBar',
+    props: {
+        name: String,
+        role: String,
+        flag: Boolean
+    },
+    methods: {
+        logout(event) {
+            event.preventDefault();
+            localStorage.removeItem('token');
+            localStorage.removeItem('email');
+            localStorage.removeItem('role');
+            this.$router.push('/login');
+        }
+    }
 };
 </script>

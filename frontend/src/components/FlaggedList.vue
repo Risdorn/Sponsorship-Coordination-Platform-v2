@@ -78,13 +78,13 @@
                 <li v-else class="page-item disabled"><span class="page-link">Previous</span></li>
 
                 <!-- Loop through each page number provided by pagination.iter_pages() -->
-                <div v-for="page_num in flags.iter_pages()">
+                <div v-for="(page_num, index) in flags.pages_iter" :key="index">
                     <!-- Check if the page number exists (not None) -->
                     <li v-if="page_num" class="page-item">
                         <!-- Check if the current page is not the active page -->
                         <a v-if="page_num != flags.page" class="page-link" @click="handlePageChange(page_num)">{{ page_num }}</a>
                         <!-- Highlight the current page as active and not clickable -->
-                        <span v-else class="page-link">{{ page_num }}</span>
+                        <span v-else class="page-link" disabled>{{ page_num }}</span>
                     </li>
                     <!-- For gaps in the pagination links, show ellipsis -->
                     <li v-else class="page-item disabled"><span class="page-link">...</span></li>
@@ -106,69 +106,61 @@
 export default {
     name: 'FlaggedList',
     props: {
-        flaggedPage: Function,
+        flags: Object
     },
     data() {
         return {
-            flagged: null,
             reason: '',
             id: ''
         };
     },
     methods: {
         async handlePageChange(page_num) {
-            this.flagged = await this.flaggedPage(page_num);
+            this.$emit('update-flagged', page_num);
         },
         async unflagUser() {
             try {
-                const response = await fetch('http://localhost:5000/api/unflag', {
-                    method: 'POST',
+                const email = localStorage.getItem('email');
+                const response = await fetch('http://localhost:5000/api/user/flag/' + email, {
+                    method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization-Token': localStorage.getItem('token')
-                    },
-                    body: JSON.stringify({
-                        user_id: this.id
-                    })
+                        'Authentication-Token': localStorage.getItem('token')
+                    }
                 });
                 const data = await response.json();
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to unflag user');
                 }
-                console.log(data);
+                this.$emit('success', 'User unflagged successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
             }
         },
         async deleteUser() {
             try {
-                const response = await fetch('http://localhost:5000/api/delete', {
-                    method: 'POST',
+                const email = localStorage.getItem('email');
+                const response = await fetch('http://localhost:5000/api/user' + email, {
+                    method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization-Token': localStorage.getItem('token')
+                        'Authentication-Token': localStorage.getItem('token')
                     },
-                    body: JSON.stringify({
-                        user_id: this.id
-                    })
                 });
                 const data = await response.json();
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to delete user');
                 }
-                console.log(data);
+                this.$emit('success', 'User deleted successfully');
                 this.$router.go();
             } catch (error) {
-                console.error(error);
+                this.$emit('error', error.message);
             }
         },
         changeId(event) {
             this.id = event.target.id;
         },
     },
-    created() {
-        this.handlePageChange(1);
-    }
 };
 </script>

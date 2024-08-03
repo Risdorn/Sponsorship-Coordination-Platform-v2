@@ -2,6 +2,7 @@ from flask_restful import Resource, reqparse, fields, marshal
 from flask_security import auth_required
 
 from ..sql_components.ad_request import *
+from ..sql_components.user import get_user
 
 ad_request_marshal = {
     "id": fields.Integer,
@@ -37,10 +38,12 @@ pagination_marshal = {
 
 ad_request_parser = reqparse.RequestParser()
 ad_request_parser.add_argument("influencer_id", location="json")
+ad_request_parser.add_argument("influencer_email", location="json")
 ad_request_parser.add_argument("campaign_id", location="json")
 ad_request_parser.add_argument("messages", location="json")
 ad_request_parser.add_argument("requirements", location="json")
 ad_request_parser.add_argument("payment_amount", location="json")
+ad_request_parser.add_argument("status", location="json")
 
 search_parser = reqparse.RequestParser()
 search_parser.add_argument("influencer_id", help="Get all ad requests associated with Influencer", location="json")
@@ -108,6 +111,9 @@ class Negotiate_Ad_Request(Resource):
         valid, message = validate_negotiate_ad(ad_request_id, args.get('payment_amount'))
         if not valid: return {"message": message}, 400
         ad_request = update_ad_request(ad_request_id, {"payment_amount": args.get('payment_amount'), "negotiate": True})
+        if not ad_request.influencer:
+            user = get_user(args.get('influencer_email'))
+            ad_request = update_ad_request(ad_request_id, {"influencer_id": user.id})
         return marshal(ad_request, ad_request_marshal), 200
     
     def post(self): return {"message": "POST not allowed"}, 405
@@ -117,7 +123,7 @@ class Negotiate_Ad_Request(Resource):
 class All_Ad_Requests(Resource):
     @auth_required('token')
     def post(self):
-        args = ad_request_parser.parse_args()
+        args = search_parser.parse_args()
         args['page'] = int(args.get('page', 1))
         if args.get('influencer_id'): ad_requests = get_influencer_ad_requests(args.get('influencer_id'), args.get('page'))
         elif args.get('campaign_id'): ad_requests = get_campaign_ad_requests(args.get('campaign_id'), args.get('page'))
