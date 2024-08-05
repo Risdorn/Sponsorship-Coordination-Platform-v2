@@ -42,7 +42,7 @@
         <div class="progress">
             <div class="progress-bar" role="progressbar" :style="{ width: campaign.progress + '%' }" 
             :aria-valuenow="campaign.progress" aria-valuemin="0" aria-valuemax="100">{{ campaign.progress }}%</div>
-        </div>
+        </div><br>
     </div><br>
 
     <button v-if="user.role=='sponsor'" type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addAdRequest">
@@ -86,7 +86,7 @@
     </div>
 
     <!-- Ad Requests -->
-    <AdRequestList v-if="!ad_loading" :role="user.role" :ad_requests="adRequests" :ad_request="ad_request" 
+    <AdRequestList v-if="!ad_loading" :role="user.role" :ad_requests="adRequests" :ad_request="ad_request" :user_id="user.id" type="campaign"
     @update-adRequests="adRequestPage" @update-adRequest="updateAdRequest" @error="error_message" @success="success_message"/>
 
     </div>

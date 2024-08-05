@@ -1,7 +1,6 @@
 from flask_restful import Resource, reqparse, fields, marshal
 from flask_security import auth_required
 
-from ..extensions import cache
 from ..sql_components.campaign import *
 from ..sql_components.ad_request import get_campaign_ad_requests, delete_ad_request
 from ..sql_components.user import get_user
@@ -62,18 +61,12 @@ search_parser.add_argument("page", help="Page Number", location="json")
 
 class Campaigns(Resource):
     @auth_required('token')
-    @cache.memoize(timeout=60)
     def get(self, campaign_id):
-        cache_key = f"campaign_{campaign_id}"
-        # Check if cache exists
-        cached = cache.get(cache_key)
-        if cached: return cached, 200
         campaign = get_campaign(campaign_id)
         campaign.length = get_campaign_ad_requests(campaign.id, 1).total
         if not campaign: return {"message": "Campaign Not Found"}, 400
         result = marshal(campaign, campaign_marshal)
         # Cache the result
-        cache.set(cache_key, result)
         return result, 200
     
     @auth_required('token')    
@@ -85,8 +78,6 @@ class Campaigns(Resource):
         campaign = update_campaign(campaign_id, {"name": args.get('name'), "description": args.get('description'), "start_date": args.get('start_date'),
                                                  "end_date": args.get('end_date'), "category": args.get('category'), "budget": args.get('budget'),
                                                  "visibility": args.get('visibility'), "goals": args.get('goals')})
-        # Delete cache
-        cache.delete(f"campaign_{campaign_id}")
         return marshal(campaign, campaign_marshal), 200
     
     @auth_required('token')
@@ -95,10 +86,8 @@ class Campaigns(Resource):
         if not campaign: return {"message": "Campaign Not Found"}, 400
         ad_requests = get_campaign_ad_requests(campaign.id, -1)
         for ad_request in ad_requests:
-            # Delete cache for all ads
             delete_ad_request(ad_request.id)
         delete_campaign(campaign_id)
-        # Delete cache for campaign
         return {"message": "Campaign and associated Ad Requests Deleted Successfully"}, 200
     
     def post(self): return {"message": "POST not allowed"}, 405

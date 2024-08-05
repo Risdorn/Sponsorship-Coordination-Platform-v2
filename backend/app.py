@@ -45,14 +45,14 @@ def automated_tasks(sender, **kwargs):
     logger.info("Setting up automated tasks")
     # daily reminder, given at 6:00 AM
     sender.add_periodic_task(
-        crontab(hour=22,minute=50),
+        crontab(hour=11,minute=51),
         #30,
         daily_reminder.s(),
     )
     logger.info("Daily reminder task set up at time")
     # monthly report, given at 12:01 AM on the first day of the month
     sender.add_periodic_task(
-        crontab(hour=22, minute=50),
+        crontab(hour=11, minute=51),
         #30,
         send_monthly_report.s(),
     )

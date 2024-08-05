@@ -7,14 +7,14 @@
         </div>
         <div v-else v-for="ad_request in ad_requests.items" :key="ad_request.id">
             <div class="card">
-                <div class="card-header">
-                    <h5>{{ ad_request.campaign.name }}</h5>
+                <div v-if="type!='campaign'" class="card-header">
+                    <h5>{{ ad_request.campaign.name }} <a :href="'/campaign/' + ad_request.campaign.id"  class="btn btn-info">View Campaign</a></h5>
                 </div>
                 <div class="card-body">
                     <p class="card-text"><b>Messages</b>: {{ ad_request.messages }}</p>
                     <p class="card-text"><b>Requirements</b>: {{ ad_request.requirements }}</p>
                     <p class="card-text"><b>Payment Amount</b>: {{ ad_request.payment_amount }}</p>
-                    <div v-if="role!='influencer'">
+                    <div v-if="type=='campaign' || role!='influencer'">
                         <p v-if="!ad_request.influencer.name" class="card-text"><b>Influencer Not Assigned</b></p>
                         <p v-else class="card-text">Assigned to <b>{{ ad_request.influencer.name }}</b></p>
                     </div>
@@ -35,7 +35,7 @@
                             Revert
                         </button>
                     </div>
-                    <div v-else-if="role=='influencer' && !ad_request.negotiate">
+                    <div v-else-if="role=='influencer' && !ad_request.negotiate && (ad_request.influencer.id == user_id || !ad_request.influencer.id)">
                         <div v-if="ad_request.influencer.name">
                             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#revertAd" :id="ad_request.id" @click="changeAd">
                                 Revert
@@ -206,7 +206,9 @@ export default {
     props: {
         role: String,
         ad_requests: Object,
-        ad_request: Object
+        ad_request: Object,
+        user_id: String,
+        type: String
     },
     data() {
         return {

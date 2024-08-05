@@ -24,14 +24,14 @@
                         <input type="hidden" name="form_id" value="search_name">
                         <input class="form-control me-2" type="search" name="search" v-model="name" placeholder="Search" aria-label="Search" style="width:200px">
                         <select class="form-select me-2" name="sort" id="sort" v-model="sort" aria-label="Sort" style="width:150px">
-                            <option :value="null" selected>No Sorting</option>
+                            <option :value="''">No Sorting</option>
                             <option value="Ascending">Ascending</option>
                             <option value="Descending">Descending</option>
                         </select>
                         <label v-if="user.role=='sponsor'" for="Search_Type" style="width:120px; align-content: center;">Sort By Reach</label>
                         <label v-if="user.role=='influencer'" for="Search_Type" style="width:120px; align-content: center;">Sort By Budget</label>
                         <select id="category" name="category" v-model="category" class="form-select me-2" style="width:200px">
-                            <option :value="null" selected>No Categories</option>
+                            <option :value="''">No Categories</option>
                             <option value="Beauty">Beauty</option>
                             <option value="Fashion">Fashion</option>
                             <option value="Fitness">Fitness</option>
@@ -85,9 +85,9 @@
                 </div>
                 <h3>Search Results</h3>
                 <div>
-                    <div v-if="name">Search Term: {{ name }}</div>
-                    <div v-if="sort">Sort: {{ sort }}</div>
-                    <div v-if="category">Category: {{ category }}</div>
+                    <div v-if="name!=''">Search Term: {{ name }}</div>
+                    <div v-if="sort!=''">Sort: {{ sort }}</div>
+                    <div v-if="category!=''">Category: {{ category }}</div>
                 </div>
 
                 <!-- Users Page -->

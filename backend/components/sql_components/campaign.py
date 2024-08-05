@@ -104,9 +104,8 @@ def search_campaign(name, budget, category, page):
     # Search via name
     campaigns = Campaign.query.filter_by(visibility="Public").filter(Campaign.ad_requests.any())
     if category: campaigns = campaigns.filter_by(category=category)
-    if name: campaigns = Campaign.query.filter(Campaign.name.like('%' + name + '%'))
+    if name: campaigns = campaigns.filter(Campaign.name.like('%' + name + '%'))
     # Sort based on budget
-    print(budget)
     if budget == "Descending":
         campaigns = campaigns.order_by(Campaign.budget.desc())
     elif budget == "Ascending":

@@ -194,7 +194,7 @@ export default {
         name: '',
         industry: '',
         category: '',
-        reach: 0,
+        reach: '',
         password: ''
     }
     },

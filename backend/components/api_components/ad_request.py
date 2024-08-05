@@ -3,6 +3,7 @@ from flask_security import auth_required
 
 from ..sql_components.ad_request import *
 from ..sql_components.user import get_user
+from ..sql_components.campaign import update_campaign
 
 ad_request_marshal = {
     "id": fields.Integer,
@@ -18,9 +19,11 @@ ad_request_marshal = {
     "rejected_on": fields.String,
     "campaign": fields.Nested({
         "name": fields.String,
+        "id": fields.Integer
     }),
     "influencer": fields.Nested({
         "name": fields.String,
+        "id": fields.Integer
     })
 }
 

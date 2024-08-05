@@ -37,7 +37,9 @@ def validate_revert_ad(ad_request_id, status):
     if status not in ["Accept", "Reject"]: return False, "Invalid status"
     # If status is Accept, check if payment amount is greater than remaining budget
     campaign = get_campaign(ad_request.campaign_id)
-    if status == "Accept" and ad_request.payment_amount > campaign.remaining: return False, "Payment amount is greater than remaining budget"
+    if status == "Accept" and ad_request.payment_amount > campaign.remaining: 
+        delete_ad_request(ad_request_id)
+        return False, "Payment amount is greater than remaining budget"
     return True, ""
 
 def validate_negotiate_ad(ad_request_id, payment_amount):

@@ -25,7 +25,7 @@
 
                 <div v-if="!flag">
                 <!-- Ad Requests Page -->
-                <AdRequestList v-if="!ad_loading" role="influencer" :ad_requests="adRequests" :ad_request="ad_request" 
+                <AdRequestList v-if="!ad_loading" role="influencer" :ad_requests="adRequests" :ad_request="ad_request"  :user_id="user.id"
                 @update-adRequests="adRequestPage" @update-adRequest="updateAdRequest" @error="error_message" @success="success_message"/>
                 </div>
             </div>
