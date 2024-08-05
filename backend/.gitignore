@@ -1,5 +1,8 @@
 # Celery partials
 celerybeat-schedule.*
 
+# Byte-compiled / optimized / DLL files
 __pycache__
 components/__pycache__
+components/api_components/__pycache__
+components/sql_components/__pycache__
