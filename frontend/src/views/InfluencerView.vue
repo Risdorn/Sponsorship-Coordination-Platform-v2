@@ -4,7 +4,7 @@
         <!-- Navigation Bar -->
         <NavBar :name="user.name" role="influencer" :flag="user.flag"/>
 
-        <div v-if="!user.flag" style="margin-top: 56px;">
+        <div style="margin-top: 56px;">
             <!-- Error message display -->
             <div v-if="success" class="alert alert-success" role="alert">
                 {{ success }}
@@ -18,9 +18,10 @@
                 Reason: {{ user.reason }}
             </div>
 
-            <div v-else>
-                <!-- Profile Page -->
-                <ProfilePage :user="user" @error="error_message" @success="success_message"/>
+            <!-- Profile Page -->
+            <ProfilePage :user="user" @error="error_message" @success="success_message"/>
+
+            <div v-if="!user.flag">
 
                 <div v-if="!flag">
                 <!-- Ad Requests Page -->

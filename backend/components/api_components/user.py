@@ -18,6 +18,14 @@ user_marshal = {
     "created_on": fields.String
 }
 
+flag_marshal = {
+    "id": fields.Integer,
+    "type_id": fields.Integer,
+    "reason": fields.String,
+    "type": fields.String,
+    "created_on": fields.String
+}
+
 pagination_marshal = {
     "total": fields.Integer,
     "per_page": fields.Integer,
@@ -54,11 +62,11 @@ class Users(Resource):
         user = get_user(email=email)
         if not user: return {"message": "User Not Found"}, 400
         if "Admin" == user.role: return {"message": "Unauthorized"}, 401
-        flag = get_flag(email)
-        if flag.get("message"): user.flag = False
+        flag, valid = get_flag(email)
+        if not valid: user.flag = False
         else: 
             user.flag = True
-            user.reason = flag['reason']
+            user.reason = flag.reason
         return marshal(user, user_marshal), 200
     
     @auth_required('token')
@@ -72,15 +80,10 @@ class Users(Resource):
     
     @auth_required('token')
     def delete(self, email):
-        args = user_parser.parse_args()
-        if not args.get('email') or not args.get('password'): return {"message": "Email and Password are required"}, 400
-        user = validate_user(args.get('email'), args.get('password'))
-        if not user: return {"message": "Invalid Credentials"}, 400
-        if "Admin" != user.role: return {"message": "Unauthorized"}, 401
         user = get_user(email=email)
         if not user: return {"message": "User Not Found"}, 400
-        flag = get_flag(email)
-        if not flag.get("message"): unflag_user(email)
+        flag, valid = get_flag(email)
+        if valid: unflag_user(email)
         delete_user(email)
         return {"message": "User Deleted Successfully"}, 200
     
@@ -91,12 +94,12 @@ class Search_Influencer(Resource):
     def post(self):
         args = search_parser.parse_args()
         users = search_user(args.get('name'), args.get('sort'), args.get('category'), int(args.get('page', 1)))
-        for user in user.items:
-            flag = get_flag(user.email)
-            if flag.get("message"): user.flag = False
+        for user in users.items:
+            flag, valid = get_flag(user.email)
+            if not valid: user.flag = False
             else: 
                 user.flag = True
-                user.reason = flag['reason']
+                user.reason = flag.reason
         return marshal(users, pagination_marshal), 200
     
     def get(self): return {"message": "GET not allowed"}, 405
@@ -108,12 +111,12 @@ class All_Users(Resource):
     def post(self):
         args = search_parser.parse_args()
         users = get_all_users(int(args.get('page', 1)))
-        for user in user.items:
-            flag = get_flag(user.email)
-            if flag.get("message"): user.flag = False
+        for user in users.items:
+            flag, valid = get_flag(user.email)
+            if not valid: user.flag = False
             else: 
                 user.flag = True
-                user.reason = flag['reason']
+                user.reason = flag.reason
         return marshal(users, pagination_marshal), 200
     
     def get(self): return {"message": "GET not allowed"}, 405
@@ -123,17 +126,17 @@ class All_Users(Resource):
 class Flag_User(Resource):
     @auth_required('token')
     def get(self, email):
-        response = get_flag(email)
-        if response.get("message"): return response, 400
-        return response, 200
+        response, valid = get_flag(email)
+        if not valid: return response, 400
+        return marshal(response, flag_marshal), 200
     
     @auth_required('token')
     def post(self, email):
         args = flag_parser.parse_args()
         if not args.get('reason'): return {"message": "Reason is required"}, 400
-        flag = flag_user(email, args.get('reason'))
-        if flag.get("message"): return flag, 400
-        return flag, 200
+        flag, valid = flag_user(email, args.get('reason'))
+        if not valid: return flag, 400
+        return marshal(flag, flag_marshal), 200
     
     @auth_required('token')
     def delete(self, email):
@@ -154,7 +157,10 @@ class Flagged_Users(Resource):
 
 class get_Stats(Resource):
     @auth_required('token')
+    @cache.memoize(timeout=3600)
     def get(self, email):
+        key = f"stats_{email}"
+        if cache.get(key): return cache.get(key)
         user = get_user(email=email)
         if not user: return {"message": "User Not Found"}, 400
         data = {}
@@ -164,4 +170,5 @@ class get_Stats(Resource):
         data["ad_requests_over_time"] = encode_image(ad_request_over_time(user.id, user.role.lower()))
         data["ad_request_status"] = encode_image(ad_request_status_distribution(user.id, user.role.lower()))
         data["payment_distribution"] = encode_image(payment_amount_distribution(user.id, user.role.lower()))
+        cache.set(key, data)
         return data, 200

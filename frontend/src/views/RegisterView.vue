@@ -157,12 +157,12 @@
                       </div>
 
                       <!-- Submit button -->
-                      <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-block mb-4" onclick="registerUser">Sign up</button>
+                      <button data-mdb-button-init data-mdb-ripple-init class="btn btn-primary btn-block mb-4" @click="registerUser">Sign up</button>
                   
                       <!-- Login buttons -->
                       <div class="text-center">
                       <p>Already Registered? <a href="/login">Sign In</a></p>
-                      <p>Register as <a v-if="role == 'Sponsor'" onclick="changeRole">Influencer</a><a v-if="role == 'Influencer'" onclick="changeRole">Sponsor</a></p>
+                      <p>Register as <a v-if="role == 'Sponsor'" @click="changeRole" href="">Influencer</a><a v-if="role == 'Influencer'" @click="changeRole" href="">Sponsor</a></p>
                       </div>
                   </form>
               </div>
@@ -180,32 +180,38 @@ data() {
     email: '',
     password: '',
     confirm_password: '',
-    category: '',
-    industry: '',
-    reach: '',
+    category: null,
+    industry: null,
+    reach: null,
     error: '',
     role: 'Sponsor',
     text: 'Register as Sponsor'
   }
 }, methods: {
-    changeRole() {
+    changeRole(event) {
+        event.preventDefault();
         if (this.role == 'Sponsor') {
             this.role = 'Influencer';
             this.text = 'Register as Influencer';
+            this.industry = null;
         } else {
             this.role = 'Sponsor';
             this.text = 'Register as Sponsor';
+            this.category = null;
+            this.reach = null;
         }
     },
-    async registerUser() {
+    async registerUser(event) {
+        event.preventDefault();
         if (this.password != this.confirm_password) {
             this.error = 'Passwords do not match';
             return;
         }
-        const response = await fetch('http://localhost:5000/api/auth/register/', {
+        const response = await fetch('http://localhost:5000/api/auth/register', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authentication-Token': localStorage.getItem('token')
             },
             body: JSON.stringify({
                 name: this.name,

@@ -109,7 +109,6 @@ export default {
       loading: true,
       error: null,
       success: null,
-      flag: null,
       ad_loading: true,
       adRequests: [],
       ad_request: null,

@@ -46,6 +46,7 @@ ad_request_parser.add_argument("payment_amount", location="json")
 ad_request_parser.add_argument("status", location="json")
 
 search_parser = reqparse.RequestParser()
+search_parser.add_argument("sponsor_id", help="Get all ad requests associated with Sponsor", location="json")
 search_parser.add_argument("influencer_id", help="Get all ad requests associated with Influencer", location="json")
 search_parser.add_argument("campaign_id", help="Get all ad requests associated with Campaign", location="json")
 search_parser.add_argument("page", help="Page Number", location="json")

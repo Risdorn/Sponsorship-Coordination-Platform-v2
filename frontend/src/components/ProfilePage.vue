@@ -9,6 +9,10 @@
         <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editProfileModal">
             Edit Profile
         </button>
+        <!-- Trigger CSV generation modal -->
+        <button v-if="user.role=='Sponsor'" type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#generateCSVModal">
+            Generate CSV
+        </button>
             
         <!-- Edit Profile Modal -->
         <div class="modal fade" id="editProfileModal" tabindex="-1" role="dialog" aria-labelledby="editProfileModalLabel" aria-hidden="true">
@@ -155,6 +159,27 @@
             </div>
             </div>
         </div>
+
+        <!-- Generate CSV Modal -->
+        <div v-if="user.role=='Sponsor'" class="modal fade" id="generateCSVModal" tabindex="-1" role="dialog" aria-labelledby="generateCSVModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+                    <form id="generate_csv">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="generateCSVModalLabel">Generate CSV</h5>
+                        </div>
+                        <div class="modal-body">
+                            <p>Clicking on the button below will generate a CSV file containing all your campaigns.</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button class="btn btn-info" @click="generateCSV" data-bs-dismiss="modal">Generate CSV</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>
 
@@ -199,6 +224,27 @@ export default {
         }
         this.$emit('success', 'Profile edited successfully');
         this.$router.go();
+        } catch (error) {
+        this.$emit('error', error.message);
+        }
+    },
+    async generateCSV(event) {
+        event.preventDefault();
+        try {
+        const token = localStorage.getItem('token');
+        const email = localStorage.getItem('email');
+        const response = await fetch('http://localhost:5000/trigger_create_resource_csv/' + email, {
+            method: 'GET',
+            headers: {
+            'Content-Type': 'application/json',
+            'Authentication-Token': token
+            }
+        });
+        const data = await response.json();
+        if(!response.ok) {
+            throw new Error(data.message || 'Failed to generate CSV');
+        }
+        this.$emit('success', 'CSV generated successfully, please check your mail');
         } catch (error) {
         this.$emit('error', error.message);
         }

@@ -15,7 +15,7 @@
                     <p v-if="user.role=='Influencer'" class="card-text"><b>Category</b>: {{ user.category }}</p>
                     <p v-if="user.role=='Sponsor'" class="card-text"><b>Industry</b>: {{ user.industry }}</p>
                     <!-- Flag User modal -->
-                    <button v-if="!user.flag && role=='admin'" type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#flagUser" :id="user.id" @click="changeId">
+                    <button v-if="!user.flag && role=='admin'" type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#flagUser" :id="user.email" @click="changeEmail">
                         Flag User
                     </button>
                     <!-- Send Ad Request Button -->
@@ -44,7 +44,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button class="btn btn-warning">Flag User</button>
+                            <button class="btn btn-warning" @click="flagUser">Flag User</button>
                         </div>
                     </form>
                 </div>
@@ -128,6 +128,7 @@ export default {
     return {
         reason: '',
         id: '',
+        email: '',
         campaign_id: '',
         messages: '',
         requirements: '',
@@ -165,16 +166,16 @@ export default {
                 this.$emit('error', error.message);
             }
         },
-        async flagUser() {
+        async flagUser(event) {
+            event.preventDefault();
             try {
-                const response = await fetch('http://localhost:5000/api/user/flag', {
+                const response = await fetch('http://localhost:5000/api/user/flag/' + this.email, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authentication-Token': localStorage.getItem('token')
                     },
                     body: JSON.stringify({
-                        user_id: this.id,
                         reason: this.reason
                     })
                 });
@@ -194,7 +195,10 @@ export default {
         },
         changeId(event) {
             this.id = event.target.id;
-        }
+        },
+        changeEmail(event) {
+            this.email = event.target.id;
+        },
     },
 };
 </script>

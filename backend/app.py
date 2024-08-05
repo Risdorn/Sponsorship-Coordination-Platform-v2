@@ -45,15 +45,15 @@ def automated_tasks(sender, **kwargs):
     logger.info("Setting up automated tasks")
     # daily reminder, given at 6:00 AM
     sender.add_periodic_task(
-        #crontab(hour=0,minute=20),
-        30,
+        crontab(hour=22,minute=50),
+        #30,
         daily_reminder.s(),
     )
     logger.info("Daily reminder task set up at time")
     # monthly report, given at 12:01 AM on the first day of the month
     sender.add_periodic_task(
-        #crontab(day_of_month=1, hour=0, minute=1),
-        30,
+        crontab(hour=22, minute=50),
+        #30,
         send_monthly_report.s(),
     )
     logger.info("Monthly report task set up")
@@ -71,10 +71,10 @@ def trigger_monthly_report():
     send_monthly_report.delay()
     return 'Monthly report triggered!'
 
-@app.route('/trigger_create_resource_csv/<int:id>')
+@app.route('/trigger_create_resource_csv/<string:email>')
 @auth_required('token')
-def trigger_create_resource_csv(id):
-    result = create_resource_csv.delay(id)
+def trigger_create_resource_csv(email):
+    result = create_resource_csv.delay(email)
     # Check the status of the task
     task_id = result.id
     print(f"Task ID: {task_id}")
@@ -84,7 +84,7 @@ def trigger_create_resource_csv(id):
     print(f"Task Status: {result.status}")
     if result.status == 'SUCCESS':
         print(f"Task Result: {result.result}")
-    return 'Create resource CSV triggered!'
+    return {'message': 'Create resource CSV triggered!'}, 200
 
 
 

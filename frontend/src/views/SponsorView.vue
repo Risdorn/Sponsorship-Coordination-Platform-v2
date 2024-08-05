@@ -21,11 +21,12 @@
                 Reason: {{ user.reason }}
             </div>
 
-            <div v-else>
-                <!-- Profile Page -->
-                <ProfilePage :user="user" @error="error_message" @success="success_message"/>
+            <!-- Profile Page -->
+            <ProfilePage :user="user" @error="error_message" @success="success_message"/>
 
-                <div v-if="!flag">
+            <div v-if="!user.flag">
+
+                <div v-if="!user.flag">
                     <!-- Campaigns Page -->
                     <CampaignList v-if="!campaign_loading" role="sponsor" :sponsor_id="user.id" :campaigns="campaigns" :campaign="campaign" 
                     @update-campaigns="campaignPage" @update-campaign="updateCampaign" @error="error_message" @success="success_message"/>

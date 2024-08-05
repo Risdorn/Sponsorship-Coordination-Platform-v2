@@ -1,5 +1,5 @@
-from flask import jsonify, request, render_template, Blueprint
-from flask_security import auth_required
+from flask import jsonify, request, Blueprint
+from datetime import date
 from .models import db
 from .extensions import datastore, bcrypt
 
@@ -43,10 +43,11 @@ def register():
     reach = data.get('reach')
     category = data.get('category')
     industry = data.get('industry')
+    date1 = date.today()
     if role == "Influencer" and (not reach or not category): return jsonify({"message": "Influencer Details missing"}), 400
     if role == "Sponsor" and not industry: return jsonify({"message": "Sponsor Details missing"}), 400
     user = datastore.create_user(email=email, name=name, password=bcrypt.generate_password_hash(password), active=True,
-                                     industry=industry, category=category, reach=reach, roles=[role])
+                                     industry=industry, category=category, reach=reach, roles=[role], created_on=date1)
     db.session.add(user)
 
     db.session.commit()

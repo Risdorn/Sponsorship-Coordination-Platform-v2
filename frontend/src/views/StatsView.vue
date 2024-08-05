@@ -5,7 +5,7 @@
         </div>
     </div>
     <div v-else>
-            <NavBar :name="user.name" :role="user.role.toLower()" :flag="user.flag"/>
+            <NavBar :name="user.name" :role="user.role" :flag="user.flag"/>
         <div style="margin-top: 56px;">
           <!-- Flag message display -->
           <div v-if="user.flag" class="alert alert-danger" role="alert">
@@ -13,10 +13,10 @@
               Reason: {{ user.reason }}
           </div>
           <div v-else>
-            <div v-if="user.role == 'Admin'" id="User_Graph">
+            <div v-if="user.role == 'admin'" id="User_Graph">
                 <img :src="'data:image/png;base64,' + user_over_time" alt="Users Over Time">
             </div>
-            <div v-if="user.role != 'Influencer'" id="Campaign_Graph">
+            <div v-if="user.role != 'influencer'" id="Campaign_Graph">
                 <img :src="'data:image/png;base64,' + campaigns_over_time" alt="Campaigns Over Time">
             </div>
 
@@ -52,12 +52,12 @@ export default {
   methods: {
     async fetchStats() {
       try {
-        const email = this.localStorage.getItem('email');
+        const email = localStorage.getItem('email');
         const response = await fetch('http://localhost:5000/api/user/stats/' + email, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            'Authentication-Token': this.localStorage.getItem('token')
+            'Authentication-Token': localStorage.getItem('token')
           }
         });
         const data = await response.json();
@@ -65,6 +65,7 @@ export default {
           throw new Error(`${data.detail}`);
         }
         this.user = data.user;
+        this.user.role = this.user.role.toLowerCase();
         this.user_over_time = data.user_over_time;
         this.campaigns_over_time = data.campaigns_over_time;
         this.ad_requests_over_time = data.ad_requests_over_time;

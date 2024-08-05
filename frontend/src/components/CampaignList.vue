@@ -123,7 +123,7 @@
                 </div>
                 </div>
             </div><br>
-            <p v-if="!campaigns || !campaigns.items">No campaigns published yet.</p>
+            <p v-if="!campaigns || campaigns.items.length==0">No campaigns published yet.</p>
             <div v-else v-for="campaign in campaigns.items" :key="campaign.id">
                 <div class="card">
                     <div class="card-header">
@@ -392,8 +392,8 @@ export default {
                 if (!response.ok) {
                     throw new Error(data.message || 'Failed to add campaign');
                 }
-                this.$emit('success', 'Campaign added successfully');
                 this.$router.go();
+                this.$emit('success', 'Campaign added successfully');
             } catch (error) {
                 this.$emit('error', error.message);
             }

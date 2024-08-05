@@ -4,6 +4,7 @@ import io
 import base64
 
 from .models import Campaign, Ad_request, User
+from .extensions import cache
 
 # Set the backend of matplotlib to Agg
 plt.switch_backend('Agg')
@@ -102,6 +103,7 @@ def user_over_time():
     users = User.query.all()
     # Get the date of creation of each user
     dates = [user.created_on for user in users]
+    dates = [date for date in dates if date is not None]
     # Get dates for this year
     dates = [get_month(date1) for date1 in dates if date1.year == date.today().year]
     # Make a dictionary

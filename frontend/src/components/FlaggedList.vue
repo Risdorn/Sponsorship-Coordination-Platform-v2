@@ -1,9 +1,9 @@
 <template>
     <div id="Flagged">
         <h3>Flagged Users</h3>
-        <p v-if="flags.items.length == 0">No User Flagged.</p>
+        <p v-if="!flags || flags.items.length == 0">No User Flagged.</p>
         <br v-else>
-        <div v-for="user in flags.items">
+        <div v-for="user in flags.items" :key="user.id">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">{{ user.name }}</h5>
@@ -12,10 +12,10 @@
                     <p v-if="user.role=='Influencer'" class="card-text"><b>Reach</b>: {{ user.reach }}</p>
                     <p v-if="user.role=='Influencer'" class="card-text"><b>Category</b>: {{ user.category }}</p>
                     <p v-if="user.role=='Sponsor'" class="card-text"><b>Industry</b>: {{ user.industry }}</p>
-                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#unflagUser" :id="user.id" onclick="changeId">
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#unflagUser" :id="user.email" @click="changeEmail">
                         Unflag User
                     </button>
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUser" :id="user.id" onclick="changeId">
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteUser" :id="user.email" @click="changeEmail">
                         Delete User
                     </button>
                 </div>
@@ -36,7 +36,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button class="btn btn-success" onclick="unflagUser">Unflag User</button>
+                            <button class="btn btn-success" @click="unflagUser">Unflag User</button>
                         </div>
                     </form>
                 </div>
@@ -59,7 +59,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button class="btn btn-danger" onclick="deleteUser">Delete User</button>
+                            <button class="btn btn-danger" @click="deleteUser">Delete User</button>
                         </div>
                     </form>
                 </div>
@@ -111,17 +111,18 @@ export default {
     data() {
         return {
             reason: '',
-            id: ''
+            id: '',
+            email: ''
         };
     },
     methods: {
         async handlePageChange(page_num) {
             this.$emit('update-flagged', page_num);
         },
-        async unflagUser() {
+        async unflagUser(event) {
+            event.preventDefault();
             try {
-                const email = localStorage.getItem('email');
-                const response = await fetch('http://localhost:5000/api/user/flag/' + email, {
+                const response = await fetch('http://localhost:5000/api/user/flag/' + this.email, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -138,10 +139,10 @@ export default {
                 this.$emit('error', error.message);
             }
         },
-        async deleteUser() {
+        async deleteUser(event) {
+            event.preventDefault();
             try {
-                const email = localStorage.getItem('email');
-                const response = await fetch('http://localhost:5000/api/user' + email, {
+                const response = await fetch('http://localhost:5000/api/user/' + this.email, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json',
@@ -158,8 +159,8 @@ export default {
                 this.$emit('error', error.message);
             }
         },
-        changeId(event) {
-            this.id = event.target.id;
+        changeEmail(event) {
+            this.email = event.target.id;
         },
     },
 };

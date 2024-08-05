@@ -1,6 +1,8 @@
 from smtplib import SMTP
 from email.mime.multipart import MIMEMultipart
+from email.mime.base import MIMEBase
 from email.mime.text import MIMEText
+from email import encoders
 from celery.utils.log import get_task_logger
 from celery import shared_task
 from jinja2 import Template
@@ -17,12 +19,20 @@ SENDER_EMAIL = 'donot-reply@reminders.com'
 SENDER_PASSWORD = ''
 
 # Function to send reports
-def send_message(to, subject, content_body):
+def send_message(to, subject, content_body, file_path = None):
     msg = MIMEMultipart()
     msg["To"] = to
     msg["Subject"] = subject
     msg["From"] = SENDER_EMAIL
     msg.attach(MIMEText(content_body, 'html'))
+    if file_path:
+        # Attach the CSV file
+        attachment = MIMEBase('application', 'octet-stream')
+        with open(file_path, 'rb') as attachment_file:
+            attachment.set_payload(attachment_file.read())
+        encoders.encode_base64(attachment)
+        attachment.add_header('Content-Disposition', f'attachment; filename={file_path.split("/")[-1]}')
+        msg.attach(attachment)
     try: 
         client = SMTP(host=SMTP_HOST, port=SMTP_PORT)
         client.send_message(msg=msg)
@@ -34,8 +44,10 @@ logger = get_task_logger(__name__)
 
 
 @shared_task(ignore_result=False)
-def create_resource_csv(sponsor_id):
-    logger.info("Creating CSV for sponsor %s", sponsor_id)
+def create_resource_csv(sponsor_email):
+    logger.info("Creating CSV for sponsor %s", sponsor_email)
+    user = User.query.filter_by(email=sponsor_email).first()
+    logger.info("Found sponsor %s", user.email)
     campaigns = Campaign.query.with_entities(
         Campaign.id.label('Id'), 
         Campaign.name.label('Name'), 
@@ -48,7 +60,7 @@ def create_resource_csv(sponsor_id):
         Campaign.goals.label('Goals'), 
         Campaign.remaining.label('Remaining budget'), 
         Campaign.created_on.label('Created On')
-    ).filter_by(sponsor_id=sponsor_id).all()
+    ).filter_by(sponsor_id=user.id).all()
 
     campaigns = [campaign._asdict() for campaign in campaigns]
     field_name = ["Id", "Name", "Description", "Start Date", "End Date", "Category", "Budget", "Visibility", "Goals", "Remaining budget", "Created On"]
@@ -63,7 +75,8 @@ def create_resource_csv(sponsor_id):
         writer.writeheader()
         writer.writerows(campaigns)
     #file_url = url_for('static', filename=filename, _external=True)
-    return filename
+    send_message(user.email, "Campaigns CSV", "Attached is the CSV file with all your campaigns", filename)
+    return "OK"
 
 
 @shared_task(ignore_result=True)
@@ -75,7 +88,7 @@ def daily_reminder():
         pending_ads = Ad_request.query.filter_by(influencer_id=user.id, status="Pending", negotiate=False).count()
         logger.info("Sending daily reminder to %s", user.email)
         logger.info("Pending ads: %s", pending_ads)
-        if pending_ads >= 0:
+        if pending_ads > 0:
             with open('static/daily_reminder.html', 'r') as f:
                 logger.info("Sending daily reminder to %s", user.email)
                 template = Template(f.read())

@@ -5,7 +5,7 @@
         </div>
     </div>
     <div v-else>
-        <NavBar :name="user.name" role="admin"/>
+        <NavBar name="Admin" role="admin"/>
 
         <div style="margin-top: 56px;">
 
@@ -23,19 +23,19 @@
             </div>
 
             <!-- Users -->
-            <UserList v-if="!user_loading" :users="users" :role="user.role"
+            <UserList v-if="!user_loading" :users="users" role="admin"
             @update-users="userPage" @error="error_message" @success="success_message"/>
 
             <!-- Campaigns -->
-            <CampaignList v-if="!campaign_loading" :campaigns="campaigns" :role="user.role"
+            <CampaignList v-if="!campaign_loading" :campaigns="campaigns" role="admin"
             @update-campaigns="campaignPage" @error="error_message" @success="success_message"/>
 
             <!-- Ad Requests -->
-            <AdRequestList v-if="!ad_request_loading" :ad_requests="adRequests" :role="user.role"
+            <AdRequestList v-if="!ad_request_loading" :ad_requests="adRequests" role="admin"
             @update-adRequests="adRequestPage" @error="error_message" @success="success_message"/>
 
             <!-- Flagged User -->
-            <FlaggedList v-if="!flagged_loading" :flagged="flagged" @update-flagged="flaggedPage"
+            <FlaggedList v-if="!flagged_loading" :flags="flagged" @update-flagged="flaggedPage"
             @error="error_message" @success="success_message"/>
         </div>
     </div>
@@ -52,7 +52,6 @@ export default {
 name: 'AdminView',
 data() {
     return {
-        user: null,
         users: [],
         campaigns: [],
         adRequests: [],
@@ -67,26 +66,6 @@ data() {
     }
 },
 methods: {
-    async getUser() {
-        try {
-            const token = localStorage.getItem('token');
-            const email = localStorage.getItem('email');
-            const response = await fetch('http://localhost:5000/api/user/' + email, {
-                method: 'GET',
-                headers: {
-                    'Authentication-Token': token
-                }
-            });
-            const data = await response.json();
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to fetch user');
-            }
-            this.user = data;
-            console.log(this.user);
-        } catch (error) {
-            this.error = error.message;
-        }
-    },
     async userPage(page) {
         this.user_loading = true;
         try {
@@ -160,11 +139,11 @@ methods: {
         }
     },
     async initializePage(){
-        await this.getUser();
         await this.userPage(1);
         await this.campaignPage(1);
         await this.adRequestPage(1);
         await this.flaggedPage(1);
+        console.log(this.flagged);
         this.loading = false;
     },
     error_message(message) {
