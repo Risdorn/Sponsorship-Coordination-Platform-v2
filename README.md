@@ -1,5 +1,7 @@
 # Sponsorship Influencer Coordination Platform (v2)
 
+> **Grade Letter: S**
+
 This platform allows sponsors and influencers to coordinate campaigns. The second version uses a Vue.js frontend with a Flask backend, along with Redis for task management via Celery.
 
 ## Features
