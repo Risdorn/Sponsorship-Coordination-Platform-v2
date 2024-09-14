@@ -134,7 +134,7 @@ Install the following Python dependencies by running `pip install -r requirement
         CACHE_REDIS_DB = 0
     ```
 
-7. **Running the Application**
+## Running the Application
 
 ### Windows
 
