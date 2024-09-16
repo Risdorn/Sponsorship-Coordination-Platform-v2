@@ -30,13 +30,14 @@ Ensure you have the following installed:
 
 - Python 3.x
 - Node.js and npm
-- Redis server
+- Redis server, for windows download and run this [msi](https://github.com/tporadowski/redis/releases) file(This is not an official release, but it allows running redis without wsl).
 - Virtual Environment (optional but recommended)
 
 ## Libraries Used
 
 Install the following Python dependencies by running `pip install -r requirements.txt`:
 
+celery doesn't support windows directly and causes issues, but adding --pool=solo in its command works(This is only viable for personal or small projects).
 - celery==5.4.0
 - Flask==3.0.3
 - Flask_Bcrypt==1.0.1
